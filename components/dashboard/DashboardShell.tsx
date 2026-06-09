@@ -1,0 +1,59 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import Sidebar from "./Sidebar";
+import Topbar from "./Topbar";
+import MobileNav from "./MobileNav";
+import Fab from "./Fab";
+import QuickSearch from "@/components/shared/QuickSearch";
+import OfflineBanner from "@/components/shared/OfflineBanner";
+import { useAppStore } from "@/store";
+import { cn } from "@/lib/utils";
+
+const pageTitles: Record<string, string> = {
+  "/": "My Day",
+  "/contacts": "Contacts",
+  "/leads": "Leads",
+  "/leads/new": "New Lead",
+  "/calls": "Call Log",
+  "/visits": "Visits",
+  "/followups": "Follow-ups",
+  "/goals": "My Goals",
+  "/reports": "Reports",
+  "/notes": "Quick Notes",
+  "/settings": "Settings",
+  "/mileage": "Mileage Tracker",
+};
+
+function getTitle(pathname: string): string {
+  if (pageTitles[pathname]) return pageTitles[pathname];
+  if (pathname.startsWith("/leads/")) return "Lead Details";
+  if (pathname.startsWith("/contacts/")) return "Contact Details";
+  return "My Day";
+}
+
+export default function DashboardShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { sidebarOpen } = useAppStore();
+
+  return (
+    <div className="flex min-h-screen bg-zinc-50">
+      <Sidebar />
+      <div
+        className={cn(
+          "flex flex-1 flex-col transition-all duration-300",
+          sidebarOpen ? "lg:ml-60" : "lg:ml-16",
+        )}
+      >
+        <OfflineBanner />
+        <Topbar />
+        <main className="flex-1 px-4 py-6 lg:px-8 pb-24 lg:pb-8 overflow-x-hidden">
+          {children}
+        </main>
+      </div>
+      <MobileNav />
+      <Fab />
+      <QuickSearch />
+    </div>
+  );
+}
