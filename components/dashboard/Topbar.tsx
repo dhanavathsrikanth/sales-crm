@@ -1,8 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
-import { Bell, Search, Menu, Sun, CloudSun } from "lucide-react";
+import { Bell, Search, Menu, Sun } from "lucide-react";
 import { useAppStore } from "@/store";
 import { UserButton } from "@clerk/nextjs";
 
@@ -20,23 +19,20 @@ export default function Topbar() {
   const firstName = user?.firstName || "there";
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-zinc-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 px-4 lg:px-6">
+    <header className="sticky top-0 z-30 flex h-12 lg:h-14 items-center gap-3 border-b border-zinc-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 px-4 lg:px-6">
       <button
         onClick={toggleSidebar}
-        className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700 lg:hidden"
+        className="hidden lg:flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-700"
       >
         <Menu className="h-5 w-5" />
       </button>
 
       <div className="flex items-center gap-2.5 flex-1 min-w-0">
-        <Sun className="h-5 w-5 text-amber-500 shrink-0" />
+        <Sun className="h-4 w-4 lg:h-5 lg:w-5 text-amber-500 shrink-0" />
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-zinc-900 truncate">
             {getGreeting()}, {firstName}
           </h2>
-          <p className="text-[11px] text-zinc-400 truncate hidden sm:block">
-            Here&apos;s what&apos;s happening today
-          </p>
         </div>
       </div>
 
@@ -45,12 +41,12 @@ export default function Topbar() {
         className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
         title="Search contacts & leads"
       >
-        <Search className="h-5 w-5" />
+        <Search className="h-4 w-4 lg:h-5 lg:w-5" />
       </button>
 
       <button className="relative flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600">
-        <Bell className="h-5 w-5" />
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-bold text-white">
+        <Bell className="h-4 w-4 lg:h-5 lg:w-5" />
+        <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-bold text-white">
           3
         </span>
       </button>

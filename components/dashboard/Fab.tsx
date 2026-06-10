@@ -18,7 +18,7 @@ export default function Fab() {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="fixed bottom-24 right-4 z-50 flex flex-col items-end gap-3 lg:bottom-8 lg:right-6">
+    <div className="fixed bottom-24 right-4 z-50 hidden flex-col items-end gap-3 lg:flex lg:bottom-8 lg:right-6">
       {open &&
         fabActions.map((action) => (
           <button

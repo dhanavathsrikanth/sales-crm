@@ -123,9 +123,16 @@
   }
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior-y: contain;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   html {
     @apply font-mono;
+  }
+  ::selection {
+    background-color: oklch(0.9 0.05 240);
+    color: oklch(0.2 0.02 240);
   }
 }
 
@@ -149,28 +156,9 @@
   }
 }
 
-@supports (padding-top: env(safe-area-inset-top)) {
-  .pb-safe {
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
-  }
-  .pt-safe {
-    padding-top: calc(1rem + env(safe-area-inset-top));
-  }
-}
-
 @media (max-width: 639px) {
   .container-sm {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
-  }
-  .text-responsive {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
-  }
-  .gap-responsive {
-    gap: 0.5rem;
-  }
-  .stack-sm > * + * {
-    margin-top: 0.5rem;
   }
 }
