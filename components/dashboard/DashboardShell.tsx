@@ -47,7 +47,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
       >
         <OfflineBanner />
         <Topbar />
-        <main className="flex-1 px-4 py-6 lg:px-8 pb-24 lg:pb-8 overflow-x-hidden">
+        <main className="flex-1 px-3 sm:px-4 lg:px-8 py-4 sm:py-6 pb-28 lg:pb-8 overflow-x-hidden">
           {children}
         </main>
       </div>

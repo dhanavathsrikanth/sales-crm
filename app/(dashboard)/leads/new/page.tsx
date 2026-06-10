@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -12,16 +12,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
-import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, Calculator } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, MapPin, Calculator, Camera, X, ImageUp } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
 const steps = [
-  { id: 1, label: "Customer Info" },
-  { id: 2, label: "Site Location" },
-  { id: 3, label: "Project Details" },
-  { id: 4, label: "Notes & Stage" },
-  { id: 5, label: "Custom Fields" },
+  { id: 1, label: "Customer" },
+  { id: 2, label: "Location" },
+  { id: 3, label: "Project" },
+  { id: 4, label: "Notes" },
+  { id: 5, label: "Custom" },
+  { id: 6, label: "Photos" },
 ];
 
 const formSchema = z.object({
@@ -44,13 +45,13 @@ const formSchema = z.object({
   longitude: z.string().optional(),
   projectType: z.string().optional(),
   projectStatus: z.string().optional(),
-  numberOfFloors: z.coerce.number().optional(),
-  builtUpArea: z.coerce.number().optional(),
-  estimatedValue: z.coerce.number().optional(),
+  numberOfFloors: z.string().optional(),
+  builtUpArea: z.string().optional(),
+  estimatedValue: z.string().optional(),
   gradeRequirements: z.array(z.string()).optional(),
-  estimatedM3: z.coerce.number().optional(),
-  monthlyM3: z.coerce.number().optional(),
-  immediateM3: z.coerce.number().optional(),
+  estimatedM3: z.string().optional(),
+  monthlyM3: z.string().optional(),
+  immediateM3: z.string().optional(),
   expectedSupplyDate: z.string().optional(),
   remarks: z.string().optional(),
   stage: z.string().default("new"),
@@ -60,6 +61,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 const GRADES = ["M7.5", "M10", "M15", "M20", "M25", "M30", "M35", "M40"];
 
+const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+const MAX_SIZE = 10 * 1024 * 1024;
+
 export default function CreateLeadPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
@@ -67,6 +71,10 @@ export default function CreateLeadPage() {
   const [calcM3, setCalcM3] = useState<number | null>(null);
   const [locating, setLocating] = useState(false);
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const createLead = useCreateLead();
   const { data: customFields = [] } = useCustomFields();
 
@@ -79,12 +87,12 @@ export default function CreateLeadPage() {
   };
 
   const calcEstimatedM3 = () => {
-    const floors = form.getValues("numberOfFloors") || 0;
-    const area = form.getValues("builtUpArea") || 0;
+    const floors = Number(form.getValues("numberOfFloors")) || 0;
+    const area = Number(form.getValues("builtUpArea")) || 0;
     if (floors && area) {
       const result = Math.round((area * floors * 0.15) / 10) * 10;
       setCalcM3(result);
-      form.setValue("estimatedM3", result);
+      form.setValue("estimatedM3", String(result));
     }
   };
 
@@ -117,6 +125,48 @@ export default function CreateLeadPage() {
     );
   };
 
+  const isMobile = typeof navigator !== "undefined" && /Mobi|Android/i.test(navigator.userAgent);
+
+  const addPhotoFiles = useCallback((newFiles: FileList | File[]) => {
+    const valid: File[] = [];
+    for (const f of Array.from(newFiles)) {
+      if (!ALLOWED_TYPES.includes(f.type)) {
+        toast.error(`${f.name}: unsupported file type`);
+        continue;
+      }
+      if (f.size > MAX_SIZE) {
+        toast.error(`${f.name}: exceeds 10MB limit`);
+        continue;
+      }
+      valid.push(f);
+    }
+    setPhotoFiles((prev) => [...prev, ...valid]);
+  }, []);
+
+  const removePhoto = (index: number) => {
+    setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const getPreviewUrl = (file: File) => {
+    if (file.type === "application/pdf") return null;
+    return URL.createObjectURL(file);
+  };
+
+  const uploadPhotos = async (leadId: string) => {
+    if (!photoFiles.length) return;
+    for (const file of photoFiles) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("leadId", leadId);
+      formData.append("type", "site");
+      try {
+        await fetch("/api/upload", { method: "POST", body: formData });
+      } catch {
+        toast.error(`Failed to upload ${file.name}`);
+      }
+    }
+  };
+
   const onSubmit = async (values: FormValues) => {
     try {
       const cfvArray = Object.entries(customFieldValues)
@@ -124,40 +174,42 @@ export default function CreateLeadPage() {
         .map(([fieldId, value]) => ({ fieldId, value }));
       const payload = { ...values, gradeRequirements: grades, customFieldValues: cfvArray };
       const result = await createLead.mutateAsync(payload);
-      toast.success("Lead created successfully");
+      if (photoFiles.length > 0) {
+        setUploading(true);
+        await uploadPhotos(result.id);
+        setUploading(false);
+      }
+      toast.success(photoFiles.length > 0 ? "Lead created with photos" : "Lead created successfully");
       router.push(`/leads/${result.id}`);
     } catch {
       toast.error("Failed to save. Please try again.");
     }
   };
 
-  const canNext = () => {
-    if (step === 1) {
-      const { companyName, contactPerson, mobile } = form.watch();
-      return companyName && contactPerson && mobile?.length >= 10;
-    }
-    return true;
-  };
+  const formValues = form.watch();
+  const canNext: boolean = step === 1
+    ? !!(formValues.companyName && formValues.contactPerson && formValues.mobile?.length >= 10)
+    : true;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-zinc-900">Create New Lead</h1>
-        <p className="text-sm text-zinc-500 mt-0.5">Fill in the details to add a new lead</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">Create New Lead</h1>
+        <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">Fill in the details to add a new lead</p>
       </div>
 
-      <div className="flex gap-1">
+      <div className="flex gap-0.5 sm:gap-1">
         {steps.map((s) => (
           <div key={s.id} className="flex-1">
             <div
               className={cn(
-                "h-2 rounded-full transition-colors",
+                "h-1.5 sm:h-2 rounded-full transition-colors",
                 s.id < step ? "bg-blue-500" : s.id === step ? "bg-blue-400" : "bg-zinc-200",
               )}
             />
             <p
               className={cn(
-                "mt-1 text-[11px] font-medium",
+                "mt-1 text-[10px] sm:text-[11px] font-medium truncate",
                 s.id <= step ? "text-blue-600" : "text-zinc-400",
               )}
             >
@@ -167,9 +219,9 @@ export default function CreateLeadPage() {
         ))}
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6">
         {step === 1 && (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm space-y-4">
             <h2 className="font-semibold text-zinc-900">Customer Information</h2>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
@@ -220,19 +272,19 @@ export default function CreateLeadPage() {
         )}
 
         {step === 2 && (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h2 className="font-semibold text-zinc-900">Site Location</h2>
               <Button type="button" variant="outline" size="sm" onClick={captureLocation} disabled={locating}>
                 <MapPin className="h-4 w-4 mr-1.5" />
-                {locating ? "Locating..." : "Capture Current Location"}
+                {locating ? "Locating..." : "Current Location"}
               </Button>
             </div>
             <div>
               <Label>Site Address</Label>
               <Textarea {...form.register("siteAddress")} rows={2} placeholder="Full site address" />
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
                 <Label>City</Label>
                 <Input {...form.register("city")} placeholder="City" />
@@ -261,7 +313,7 @@ export default function CreateLeadPage() {
         )}
 
         {step === 3 && (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm space-y-4">
             <h2 className="font-semibold text-zinc-900">Project Details</h2>
             <div className="space-y-3">
               <Label>Project Type</Label>
@@ -272,7 +324,7 @@ export default function CreateLeadPage() {
                     type="button"
                     onClick={() => form.setValue("projectType", t)}
                     className={cn(
-                      "rounded-lg border px-4 py-2 text-sm font-medium transition-colors",
+                      "rounded-lg border px-3 sm:px-4 py-2 text-xs sm:text-sm font-medium transition-colors",
                       form.watch("projectType") === t
                         ? "border-blue-200 bg-blue-50 text-blue-700"
                         : "border-zinc-200 text-zinc-600 hover:border-zinc-300",
@@ -283,7 +335,7 @@ export default function CreateLeadPage() {
                 ))}
               </div>
             </div>
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
                 <Label>Project Status</Label>
                 <select
@@ -297,18 +349,18 @@ export default function CreateLeadPage() {
                 </select>
               </div>
               <div>
-                <Label>Number of Floors</Label>
+                <Label>Floors</Label>
                 <Input {...form.register("numberOfFloors")} type="number" placeholder="e.g. 16" />
               </div>
               <div>
-                <Label>Built-up Area (sq ft)</Label>
+                <Label>Built-up (sq ft)</Label>
                 <Input {...form.register("builtUpArea")} type="number" placeholder="e.g. 48000" />
               </div>
               <div>
-                <Label>Estimated Project Value (₹)</Label>
+                <Label>Est. Value (₹)</Label>
                 <Input {...form.register("estimatedValue")} type="number" placeholder="e.g. 25000000" />
               </div>
-              <div className="sm:col-span-2">
+              <div className="col-span-2">
                 <Label>Grade Requirements</Label>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {GRADES.map((g) => (
@@ -317,7 +369,7 @@ export default function CreateLeadPage() {
                       type="button"
                       onClick={() => toggleGrade(g)}
                       className={cn(
-                        "rounded-full px-3 py-1 text-xs font-medium transition-colors",
+                        "rounded-full px-2.5 sm:px-3 py-1 text-xs font-medium transition-colors",
                         grades.includes(g)
                           ? "bg-blue-100 text-blue-700"
                           : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200",
@@ -348,7 +400,7 @@ export default function CreateLeadPage() {
               )}
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               <div>
                 <Label>Estimated m³</Label>
                 <Input {...form.register("estimatedM3")} type="number" placeholder="Auto or manual" />
@@ -370,7 +422,7 @@ export default function CreateLeadPage() {
         )}
 
         {step === 4 && (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm space-y-4">
             <h2 className="font-semibold text-zinc-900">Notes & Stage</h2>
             <div>
               <Label>Lead Stage</Label>
@@ -396,7 +448,7 @@ export default function CreateLeadPage() {
         )}
 
         {step === 5 && (
-          <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm space-y-4">
             <h2 className="font-semibold text-zinc-900">Custom Fields</h2>
             {customFields.length === 0 ? (
               <p className="text-sm text-zinc-400">No custom fields configured. Add them in Settings.</p>
@@ -482,28 +534,101 @@ export default function CreateLeadPage() {
           </div>
         )}
 
+        {step === 6 && (
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm space-y-4">
+            <h2 className="font-semibold text-zinc-900">Photos</h2>
+            <p className="text-sm text-zinc-500">Add site photos or documents to this lead</p>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {isMobile && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9 text-xs gap-1"
+                  onClick={() => cameraRef.current?.click()}
+                >
+                  <Camera className="h-4 w-4" />
+                  Take Photo
+                </Button>
+              )}
+              <input
+                ref={cameraRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => e.target.files && addPhotoFiles(e.target.files)}
+              />
+            </div>
+
+            <div
+              onClick={() => inputRef.current?.click()}
+              className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-zinc-300 bg-zinc-50 p-6 transition-colors hover:border-zinc-400"
+            >
+              <ImageUp className="mb-2 h-8 w-8 text-zinc-300" />
+              <p className="text-sm font-medium text-zinc-600">Tap to browse photos</p>
+              <p className="mt-0.5 text-xs text-zinc-400">JPEG, PNG, WebP, PDF up to 10MB</p>
+              <input
+                ref={inputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp,application/pdf"
+                className="hidden"
+                onChange={(e) => e.target.files && addPhotoFiles(e.target.files)}
+              />
+            </div>
+
+            {photoFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {photoFiles.map((f, i) => {
+                  const preview = getPreviewUrl(f);
+                  return (
+                    <div key={`${f.name}-${i}`} className="group relative h-16 w-16 overflow-hidden rounded-lg border bg-zinc-100">
+                      {preview ? (
+                        <img src={preview} alt={f.name} className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full items-center justify-center">
+                          <span className="text-[10px] text-zinc-400">PDF</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(i)}
+                        className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-black/50 text-white opacity-0 group-hover:opacity-100"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
             {step > 1 ? (
-              <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)}>
+              <Button type="button" variant="outline" onClick={() => setStep((s) => s - 1)} size="sm" className="sm:h-10 sm:px-4">
                 <ArrowLeft className="h-4 w-4 mr-1.5" />
-                Back
+                <span className="hidden sm:inline">Back</span>
               </Button>
             ) : (
               <Link href="/leads">
-                <Button type="button" variant="ghost">Cancel</Button>
+                <Button type="button" variant="ghost" size="sm" className="sm:h-10">Cancel</Button>
               </Link>
             )}
           </div>
           <div className="flex gap-2">
-            {step < 5 ? (
-              <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
-                Next
-                <ArrowRight className="h-4 w-4 ml-1.5" />
+            {step < 6 ? (
+              <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canNext} size="sm" className="sm:h-10 sm:px-4">
+                <span className="hidden sm:inline">Next</span>
+                <ArrowRight className="h-4 w-4 sm:ml-1.5" />
               </Button>
             ) : (
-              <Button type="submit" disabled={createLead.isPending}>
-                {createLead.isPending ? (
+              <Button type="submit" disabled={createLead.isPending || uploading} size="sm" className="sm:h-10 sm:px-4">
+                {createLead.isPending || uploading ? (
                   <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Creating...</>
                 ) : (
                   <><Check className="h-4 w-4 mr-1.5" /> Create Lead</>

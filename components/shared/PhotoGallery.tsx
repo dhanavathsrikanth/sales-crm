@@ -100,14 +100,14 @@ export default function PhotoGallery({ photos, onDelete }: PhotoGalleryProps) {
           No {filter} photos
         </div>
       ) : (
-        <div className="columns-2 gap-3 sm:columns-3 lg:columns-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {filtered.map((photo) => {
             const Icon = photoTypeIcons[photo.type as string] || ImageIcon
             const isPdf = photo.fileName?.toLowerCase().endsWith(".pdf")
             return (
               <div
                 key={photo.id}
-                className="group relative mb-3 break-inside-avoid overflow-hidden rounded-xl border bg-zinc-50"
+                className="group relative overflow-hidden rounded-xl border bg-zinc-50"
               >
                 <button
                   type="button"

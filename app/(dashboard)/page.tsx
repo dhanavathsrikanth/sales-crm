@@ -250,27 +250,27 @@ function Section1Greeting({
     data.peopleToContact.followupsDue.length
 
   return (
-    <div className="rounded-xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-6 text-white shadow-lg">
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+    <div className="rounded-xl bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-4 sm:p-6 text-white shadow-lg">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
             {greeting}, {data.user.name} 👋
           </h1>
-          <p className="mt-1 text-blue-200 text-sm">
+          <p className="mt-0.5 text-blue-200 text-xs sm:text-sm">
             {format(new Date(), "EEEE, MMMM d, yyyy")}
           </p>
         </div>
-        <div className="mt-3 sm:mt-0 flex items-center gap-2 rounded-lg bg-white/15 px-3 py-2 text-sm backdrop-blur-sm">
-          <CalendarDays className="h-4 w-4" />
+        <div className="flex items-center gap-2 rounded-lg bg-white/15 px-2.5 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm backdrop-blur-sm whitespace-nowrap">
+          <CalendarDays className="h-3.5 sm:h-4 w-3.5 sm:w-4" />
           <span>
             {taskCount > 0
-              ? `You have ${taskCount} item${taskCount > 1 ? "s" : ""} to focus on`
-              : "You have a full day ahead"}
+              ? `${taskCount} item${taskCount > 1 ? "s" : ""}`
+              : "Full day ahead"}
           </span>
         </div>
       </div>
-      <div className="mt-4 border-t border-white/20 pt-4">
-        <p className="text-sm italic text-blue-100">&ldquo;{quote}&rdquo;</p>
+      <div className="mt-3 sm:mt-4 border-t border-white/20 pt-3 sm:pt-4">
+        <p className="text-xs sm:text-sm italic text-blue-100 leading-relaxed">&ldquo;{quote}&rdquo;</p>
       </div>
     </div>
   )

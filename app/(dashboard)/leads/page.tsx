@@ -43,36 +43,36 @@ export default function LeadsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Leads</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">Leads</h1>
+          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
             {data ? `${data.total} lead${data.total !== 1 ? "s" : ""}` : "Loading..."}
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="h-4 w-4 mr-1.5" />
-            Export
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={handleExport} className="h-8 sm:h-9 text-xs sm:text-sm">
+            <Download className="h-4 w-4 mr-1 sm:mr-1.5" />
+            <span className="hidden sm:inline">Export</span>
           </Button>
           <div className="flex rounded-lg border border-zinc-200 overflow-hidden">
             <button
               onClick={() => setView("card")}
-              className={`p-2 transition-colors ${view === "card" ? "bg-blue-50 text-blue-600" : "text-zinc-400 hover:text-zinc-600"}`}
+              className={`p-1.5 sm:p-2 transition-colors ${view === "card" ? "bg-blue-50 text-blue-600" : "text-zinc-400 hover:text-zinc-600"}`}
             >
-              <Grid3X3 className="h-4 w-4" />
+              <Grid3X3 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
             <button
               onClick={() => setView("table")}
-              className={`p-2 transition-colors ${view === "table" ? "bg-blue-50 text-blue-600" : "text-zinc-400 hover:text-zinc-600"}`}
+              className={`p-1.5 sm:p-2 transition-colors ${view === "table" ? "bg-blue-50 text-blue-600" : "text-zinc-400 hover:text-zinc-600"}`}
             >
-              <Table2 className="h-4 w-4" />
+              <Table2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
             </button>
           </div>
           <Link href="/leads/new">
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1.5" />
-              New Lead
+            <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm">
+              <Plus className="h-4 w-4 mr-1 sm:mr-1.5" />
+              <span className="hidden sm:inline">New Lead</span>
             </Button>
           </Link>
         </div>
@@ -123,8 +123,8 @@ export default function LeadsPage() {
       )}
 
       {data && data.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-zinc-500">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs sm:text-sm text-zinc-500">
             Page {data.page} of {data.totalPages}
           </p>
           <div className="flex gap-2">
@@ -133,6 +133,7 @@ export default function LeadsPage() {
               size="sm"
               disabled={filters.page <= 1}
               onClick={() => setFilters((f) => ({ ...f, page: f.page - 1 }))}
+              className="h-8 sm:h-9 text-xs sm:text-sm"
             >
               Previous
             </Button>
@@ -141,6 +142,7 @@ export default function LeadsPage() {
               size="sm"
               disabled={filters.page >= data.totalPages}
               onClick={() => setFilters((f) => ({ ...f, page: f.page + 1 }))}
+              className="h-8 sm:h-9 text-xs sm:text-sm"
             >
               Next
             </Button>

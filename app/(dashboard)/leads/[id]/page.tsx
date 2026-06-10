@@ -143,17 +143,18 @@ export default function LeadDetailPage() {
         <span className="text-zinc-800 font-medium truncate">{lead.companyName || "Lead"}</span>
       </div>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
           <Link href="/leads">
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-zinc-900">{lead.companyName || "Untitled"}</h1>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h1 className="text-lg sm:text-2xl font-bold text-zinc-900 truncate max-w-[200px] sm:max-w-none">{lead.companyName || "Untitled"}</h1>
               <Badge className={cn(
+                "shrink-0",
                 lead.stage === "won" ? "bg-emerald-100 text-emerald-700" :
                 lead.stage === "lost" ? "bg-red-100 text-red-700" :
                 "bg-blue-100 text-blue-700"
@@ -163,7 +164,7 @@ export default function LeadDetailPage() {
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <QuickShare
             contactPerson={lead.contactPerson}
             projectName={lead.projectName}
@@ -173,7 +174,7 @@ export default function LeadDetailPage() {
           />
           {lead.mobile && (
             <a href={`tel:${lead.mobile}`}>
-              <Button variant="outline" size="sm" className="gap-1.5">
+              <Button variant="outline" size="sm" className="gap-1.5 h-8 sm:h-9">
                 <Phone className="h-4 w-4" />
                 <span className="hidden sm:inline">Call</span>
               </Button>
@@ -216,17 +217,17 @@ export default function LeadDetailPage() {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="followups">Follow-ups ({lead.followups?.length || 0})</TabsTrigger>
-          <TabsTrigger value="visits">Visits ({lead.visits?.length || 0})</TabsTrigger>
-          <TabsTrigger value="photos">Photos ({lead.photos?.length || 0})</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+        <TabsList className="w-full justify-start overflow-x-auto scrollbar-hide -mx-1 px-1">
+          <TabsTrigger value="overview" className="text-xs sm:text-sm whitespace-nowrap">Overview</TabsTrigger>
+          <TabsTrigger value="followups" className="text-xs sm:text-sm whitespace-nowrap">Follow-ups ({lead.followups?.length || 0})</TabsTrigger>
+          <TabsTrigger value="visits" className="text-xs sm:text-sm whitespace-nowrap">Visits ({lead.visits?.length || 0})</TabsTrigger>
+          <TabsTrigger value="photos" className="text-xs sm:text-sm whitespace-nowrap">Photos ({lead.photos?.length || 0})</TabsTrigger>
+          <TabsTrigger value="activity" className="text-xs sm:text-sm whitespace-nowrap">Activity</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5 shadow-sm">
               <h3 className="font-semibold text-zinc-900 mb-3">Customer Info</h3>
               <dl className="space-y-2 text-sm">
                 {[
@@ -254,7 +255,7 @@ export default function LeadDetailPage() {
               )}
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5 shadow-sm">
               <h3 className="font-semibold text-zinc-900 mb-3">Project Info</h3>
               <dl className="space-y-2 text-sm">
                 {[
@@ -276,8 +277,8 @@ export default function LeadDetailPage() {
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5 shadow-sm">
               <h3 className="font-semibold text-zinc-900 mb-3">Concrete Requirements</h3>
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-lg bg-blue-50 p-3 text-center">
@@ -305,7 +306,7 @@ export default function LeadDetailPage() {
               )}
             </div>
 
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5 shadow-sm">
               <h3 className="font-semibold text-zinc-900 mb-3">Location</h3>
               {lead.siteAddress ? (
                 <p className="text-sm text-zinc-700 mb-2">{lead.siteAddress}</p>
@@ -332,14 +333,14 @@ export default function LeadDetailPage() {
           </div>
 
           {lead.remarks && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5 shadow-sm">
               <h3 className="font-semibold text-zinc-900 mb-2">Remarks</h3>
               <p className="text-sm text-zinc-700">{lead.remarks}</p>
             </div>
           )}
 
           {lead.customFieldValues && lead.customFieldValues.length > 0 && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5 shadow-sm">
               <h3 className="font-semibold text-zinc-900 mb-3">Custom Fields</h3>
               <dl className="space-y-2 text-sm">
                 {lead.customFieldValues.map((cfv: any) => (
@@ -355,7 +356,7 @@ export default function LeadDetailPage() {
           )}
 
           {linkedNotes.length > 0 && (
-            <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-5 shadow-sm">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="font-semibold text-zinc-900">Linked Notes ({linkedNotes.length})</h3>
                 <Link href="/notes">

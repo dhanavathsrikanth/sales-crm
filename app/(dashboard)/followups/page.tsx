@@ -362,7 +362,7 @@ export default function FollowUpsPage() {
       />
 
       {data?.stats && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <Card>
             <CardContent className="flex items-center gap-3 p-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
@@ -401,8 +401,8 @@ export default function FollowUpsPage() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <div className="flex gap-1 rounded-lg bg-muted p-1">
+      <div className="overflow-x-auto -mx-1 px-1 scrollbar-hide">
+        <div className="flex gap-1 rounded-lg bg-muted p-1 w-max sm:w-full">
           {TABS.map((tab) => (
             <button
               key={tab.key}
@@ -411,7 +411,7 @@ export default function FollowUpsPage() {
                 setSelectedIds(new Set())
               }}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                "rounded-md px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
                 activeTab === tab.key
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",

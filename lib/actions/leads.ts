@@ -189,11 +189,49 @@ export async function createLead(data: any) {
 
     const { customFieldValues: cfvBody, ...leadBody } = data;
 
+    const sanitizeNum = (v: any) => {
+      if (v === "" || v === undefined || v === null || (typeof v === "number" && isNaN(v))) return null;
+      const n = Number(v);
+      return isNaN(n) ? null : n;
+    };
+
+    const cleanedLeadBody = {
+      ...leadBody,
+      numberOfFloors: sanitizeNum(leadBody.numberOfFloors),
+      estimatedValue: sanitizeNum(leadBody.estimatedValue),
+      builtUpArea: sanitizeNum(leadBody.builtUpArea),
+      estimatedM3: sanitizeNum(leadBody.estimatedM3),
+      monthlyM3: sanitizeNum(leadBody.monthlyM3),
+      immediateM3: sanitizeNum(leadBody.immediateM3),
+      gradeRequirements:
+        Array.isArray(leadBody.gradeRequirements) && leadBody.gradeRequirements.length > 0
+          ? leadBody.gradeRequirements
+          : null,
+      latitude: leadBody.latitude || null,
+      longitude: leadBody.longitude || null,
+      email: leadBody.email || null,
+      existingVendor: leadBody.existingVendor || null,
+      competitorNotes: leadBody.competitorNotes || null,
+      remarks: leadBody.remarks || null,
+      pincode: leadBody.pincode || null,
+      siteAddress: leadBody.siteAddress || null,
+      city: leadBody.city || null,
+      district: leadBody.district || null,
+      state: leadBody.state || null,
+      expectedSupplyDate: leadBody.expectedSupplyDate || null,
+      projectType: leadBody.projectType || null,
+      projectStatus: leadBody.projectStatus || null,
+      clientCompany: leadBody.clientCompany || null,
+      builderName: leadBody.builderName || null,
+      projectName: leadBody.projectName || null,
+      designation: leadBody.designation || null,
+    };
+
     const [lead] = await db
       .insert(leads)
       .values({
         userId: user.data.id,
-        ...leadBody,
+        ...cleanedLeadBody,
         stage: leadBody.stage || "new",
       })
       .returning();

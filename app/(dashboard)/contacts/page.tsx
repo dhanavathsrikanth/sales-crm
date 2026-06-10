@@ -29,18 +29,18 @@ export default function ContactsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Contacts</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">
+          <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">Contacts</h1>
+          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
             {data ? `${data.total} contact${data.total !== 1 ? "s" : ""}` : "Loading..."}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/contacts/new">
-            <Button size="sm">
-              <Plus className="h-4 w-4 mr-1.5" />
-              New Contact
+            <Button size="sm" className="h-8 sm:h-9 text-xs sm:text-sm">
+              <Plus className="h-4 w-4 mr-1 sm:mr-1.5" />
+              <span className="hidden sm:inline">New Contact</span>
             </Button>
           </Link>
         </div>
@@ -48,11 +48,11 @@ export default function ContactsPage() {
 
       {birthdays && birthdays.length > 0 && (
         <div className="rounded-xl border border-pink-200 bg-gradient-to-r from-pink-50 to-rose-50 p-3">
-          <div className="flex items-center gap-2 text-sm text-pink-800">
-            <Gift className="h-4 w-4" />
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs sm:text-sm text-pink-800">
+            <Gift className="h-4 w-4 shrink-0" />
             <span className="font-medium">Upcoming Birthdays:</span>
             {birthdays.slice(0, 3).map((b: any) => (
-              <span key={b.id} className="bg-white rounded-full px-2.5 py-0.5 text-xs font-medium text-pink-700">
+              <span key={b.id} className="bg-white rounded-full px-2 py-0.5 text-xs font-medium text-pink-700 whitespace-nowrap">
                 {b.name} ({b.daysUntil <= 0 ? "Today!" : `${b.daysUntil}d`})
               </span>
             ))}

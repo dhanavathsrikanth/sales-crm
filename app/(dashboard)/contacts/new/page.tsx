@@ -91,7 +91,7 @@ export default function CreateContactPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-4 sm:space-y-6">
       <div className="flex items-center gap-3">
         <Link href="/contacts">
           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -99,8 +99,8 @@ export default function CreateContactPage() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">New Contact</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Add someone to your network</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">New Contact</h1>
+          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">Add someone to your network</p>
         </div>
       </div>
 
