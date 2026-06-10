@@ -38,10 +38,10 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico", sizes: "48x48" },
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon-192.svg", sizes: "192x192", type: "image/svg+xml" },
+      { url: "/icon-512.svg", sizes: "512x512", type: "image/svg+xml" },
     ],
-    apple: { url: "/apple-icon.png", sizes: "180x180" },
+    apple: { url: "/apple-icon.svg", sizes: "180x180", type: "image/svg+xml" },
   },
   openGraph: {
     title: "PRISM RMC CRM",
@@ -63,6 +63,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
         suppressHydrationWarning
       >
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `new MutationObserver(function(m){m.forEach(function(r){if(r.type==="attributes"&&r.attributeName==="fdprocessedid"){r.target.removeAttribute("fdprocessedid")}else{r.addedNodes.forEach(function(n){if(n.nodeType===1&&n.querySelectorAll)n.querySelectorAll("[fdprocessedid]").forEach(function(e){e.removeAttribute("fdprocessedid")})})}})}).observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:["fdprocessedid"]})`,
+            }}
+          />
+        </head>
         <body className="min-h-full">
           <Providers>{children}</Providers>
         </body>

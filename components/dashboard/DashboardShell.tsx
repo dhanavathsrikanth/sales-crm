@@ -7,6 +7,7 @@ import MobileNav from "./MobileNav";
 import Fab from "./Fab";
 import QuickSearch from "@/components/shared/QuickSearch";
 import OfflineBanner from "@/components/shared/OfflineBanner";
+import Breadcrumbs from "@/components/shared/Breadcrumbs";
 import { useAppStore } from "@/store";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +49,7 @@ export default function DashboardShell({ children }: { children: React.ReactNode
         <OfflineBanner />
         <Topbar />
         <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 pb-24 lg:pb-8 overflow-x-hidden">
+          <Breadcrumbs />
           {children}
         </main>
       </div>

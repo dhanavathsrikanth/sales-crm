@@ -22,7 +22,7 @@ const steps = [
   { id: 3, label: "Project" },
   { id: 4, label: "Notes" },
   { id: 5, label: "Custom" },
-  { id: 6, label: "Photos" },
+  { id: 6, label: "Add Photos" },
 ];
 
 const formSchema = z.object({
@@ -536,8 +536,8 @@ export default function CreateLeadPage() {
 
         {step === 6 && (
           <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm space-y-4">
-            <h2 className="font-semibold text-zinc-900">Photos</h2>
-            <p className="text-sm text-zinc-500">Add site photos or documents to this lead</p>
+            <h2 className="font-semibold text-zinc-900">Add Photos (Optional)</h2>
+            <p className="text-sm text-zinc-500">Attach site photos or documents — or just skip and create the lead</p>
 
             <div className="flex flex-wrap items-center gap-2">
               {isMobile && (
@@ -621,12 +621,13 @@ export default function CreateLeadPage() {
             )}
           </div>
           <div className="flex gap-2">
-            {step < 6 ? (
+            {step < 5 && (
               <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canNext} size="sm" className="sm:h-10 sm:px-4">
                 <span className="hidden sm:inline">Next</span>
                 <ArrowRight className="h-4 w-4 sm:ml-1.5" />
               </Button>
-            ) : (
+            )}
+            {step >= 5 && (
               <Button type="submit" disabled={createLead.isPending || uploading} size="sm" className="sm:h-10 sm:px-4">
                 {createLead.isPending || uploading ? (
                   <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Creating...</>
