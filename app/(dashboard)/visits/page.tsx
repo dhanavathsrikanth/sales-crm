@@ -257,7 +257,7 @@ export default function VisitsPage() {
       )}
 
       {data?.stats && (
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
           <Card><CardContent className="flex flex-col items-center gap-1 p-3 text-center">
             <MapPin className="h-4 w-4 text-blue-600" />
             <p className="text-lg font-bold">{data.stats.visitsToday}</p>
@@ -328,7 +328,7 @@ export default function VisitsPage() {
         </Card>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex gap-1 rounded-lg bg-muted p-1">
           {PERIODS.map((p) => (
             <button

@@ -151,12 +151,12 @@ export default function NotesPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900">Quick Notes</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Press <kbd className="rounded border border-zinc-300 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-mono">N</kbd> to quick-add</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">Quick Notes</h1>
+          <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">Press <kbd className="rounded border border-zinc-300 bg-zinc-50 px-1.5 py-0.5 text-[10px] font-mono">N</kbd> to quick-add</p>
         </div>
-        <div className="relative w-64">
+        <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
           <input
             value={search}
