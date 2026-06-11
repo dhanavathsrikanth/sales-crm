@@ -46,7 +46,6 @@ import {
   CalendarDays,
   Users,
   Gauge,
-  Pencil,
   Loader2,
 } from "lucide-react"
 
@@ -295,7 +294,7 @@ function Section2MileageCard() {
   const [endValue, setEndValue] = useState("")
 
   const isPartial = todayLog && !todayLog.endReading
-  const isComplete = todayLog && todayLog.endReading
+  const isComplete = !!(todayLog && todayLog.endReading)
   const distanceToday = todayLog?.startReading && todayLog?.endReading
     ? Number(todayLog.endReading) - Number(todayLog.startReading)
     : 0
@@ -306,8 +305,10 @@ function Section2MileageCard() {
     : 0
   const previewTA = previewDistance * Number(todayLog?.taRatePerKm || 4)
 
+  const hasLogged = !!todayLog
+
   const handleSaveStart = () => {
-    if (!startValue) return
+    if (!startValue || hasLogged) return
     saveLog.mutate(
       { logDate: new Date().toISOString().split("T")[0], startReading: startValue },
       { onSuccess: () => { toast.success("Start reading logged"); setStartValue("") } },
@@ -315,7 +316,7 @@ function Section2MileageCard() {
   }
 
   const handleCloseDay = () => {
-    if (!endValue || !todayLog) return
+    if (!endValue || !todayLog || isComplete) return
     saveLog.mutate(
       {
         logDate: todayLog.logDate,
@@ -361,14 +362,15 @@ function Section2MileageCard() {
               value={startValue}
               onChange={(e) => setStartValue(e.target.value)}
               className="h-12 text-lg"
+              disabled={hasLogged || saveLog.isPending}
             />
-            <Button className="w-full" size="lg" disabled={!startValue || saveLog.isPending} onClick={handleSaveStart}>
+            <Button className="w-full" size="lg" disabled={!startValue || saveLog.isPending || hasLogged} onClick={handleSaveStart}>
               {saveLog.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Log Start
             </Button>
           </div>
         )}
-        {isPartial && (
+        {isPartial && !isComplete && (
           <div className="space-y-3">
             <Input
               type="number"
@@ -382,7 +384,7 @@ function Section2MileageCard() {
                 {previewDistance} km · ₹{previewTA} TA
               </p>
             )}
-            <Button className="w-full" size="lg" disabled={!endValue || saveLog.isPending} onClick={handleCloseDay}>
+            <Button className="w-full" size="lg" disabled={!endValue || saveLog.isPending || isComplete} onClick={handleCloseDay}>
               {saveLog.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Close Day
             </Button>
@@ -394,9 +396,7 @@ function Section2MileageCard() {
               <p className="text-2xl font-bold text-emerald-600">{distanceToday} km</p>
               <p className="text-xs text-muted-foreground">Distance today</p>
             </div>
-            <Link href="/mileage" className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:underline">
-              <Pencil className="h-3 w-3" />Edit
-            </Link>
+            <p className="mt-2 text-xs text-zinc-400">Come back tomorrow for a new reading</p>
           </div>
         )}
       </CardContent>

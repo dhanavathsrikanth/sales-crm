@@ -141,14 +141,6 @@ export default function Topbar() {
             <Search className="h-4 w-4" />
           </button>
 
-          <Link
-            href="/settings"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 lg:hidden"
-            title="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Link>
-
           <button
             onClick={() => setNotifOpen(!notifOpen)}
             className={cn(
@@ -165,9 +157,7 @@ export default function Topbar() {
             )}
           </button>
 
-          <div className="hidden sm:block">
-            <UserButton />
-          </div>
+          <UserButton />
         </div>
       </header>
 
