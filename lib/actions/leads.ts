@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { getOrCreateUser } from "./users";
+import { generateEmbedding, prepareLeadText } from "@/lib/embeddings";
 
 export interface LeadFilters {
   search?: string;
@@ -44,13 +45,30 @@ export async function getLeads(filters: LeadFilters = {}, pagination: LeadPagina
     const searchConditions: any[] = [eq(leads.userId, user.data.id)];
 
     if (search) {
+      const searchPattern = `%${search.toLowerCase()}%`;
       searchConditions.push(
-        or(
-          like(leads.companyName, `%${search}%`),
-          like(leads.builderName, `%${search}%`),
-          like(leads.contactPerson, `%${search}%`),
-          like(leads.mobile, `%${search}%`),
-        ),
+        sql`(
+          LOWER(${leads.companyName}) LIKE ${searchPattern}
+          OR LOWER(${leads.clientCompany}) LIKE ${searchPattern}
+          OR LOWER(${leads.builderName}) LIKE ${searchPattern}
+          OR LOWER(${leads.projectName}) LIKE ${searchPattern}
+          OR LOWER(${leads.contactPerson}) LIKE ${searchPattern}
+          OR LOWER(${leads.designation}) LIKE ${searchPattern}
+          OR LOWER(${leads.mobile}) LIKE ${searchPattern}
+          OR LOWER(${leads.email}) LIKE ${searchPattern}
+          OR LOWER(${leads.siteAddress}) LIKE ${searchPattern}
+          OR LOWER(${leads.city}) LIKE ${searchPattern}
+          OR LOWER(${leads.district}) LIKE ${searchPattern}
+          OR LOWER(${leads.state}) LIKE ${searchPattern}
+          OR LOWER(${leads.pincode}) LIKE ${searchPattern}
+          OR LOWER(${leads.existingVendor}) LIKE ${searchPattern}
+          OR LOWER(${leads.competitorNotes}) LIKE ${searchPattern}
+          OR LOWER(${leads.remarks}) LIKE ${searchPattern}
+          OR LOWER(${leads.lostReason}) LIKE ${searchPattern}
+          OR LOWER(${leads.stage}::text) LIKE ${searchPattern}
+          OR LOWER(${leads.projectType}::text) LIKE ${searchPattern}
+          OR LOWER(${leads.projectStatus}::text) LIKE ${searchPattern}
+        )`,
       );
     }
 
@@ -82,7 +100,11 @@ export async function getLeads(filters: LeadFilters = {}, pagination: LeadPagina
 
     const where = and(...searchConditions);
 
-    const total = await db.$count(leads, where);
+    const [countResult] = await db
+      .select({ value: sql<number>`count(*)` })
+      .from(leads)
+      .where(where);
+    const total = Number(countResult?.value ?? 0);
 
     let orderBy;
     switch (sort) {
@@ -122,6 +144,7 @@ export async function getLeads(filters: LeadFilters = {}, pagination: LeadPagina
       error: null,
     };
   } catch (error) {
+    console.error("getLeads error:", error);
     return { success: false as const, data: null, error: String(error) };
   }
 }
@@ -236,6 +259,19 @@ export async function createLead(data: any) {
       })
       .returning();
 
+    try {
+      const text = prepareLeadText(lead);
+      if (text) {
+        const embedding = await generateEmbedding(text);
+        await db
+          .update(leads)
+          .set({ embedding: sql`${JSON.stringify(embedding)}::vector` })
+          .where(eq(leads.id, lead.id));
+      }
+    } catch (e) {
+      console.error("Embedding generation failed for lead", lead.id, e);
+    }
+
     if (cfvBody && Array.isArray(cfvBody)) {
       for (const cfv of cfvBody) {
         if (cfv.fieldId && cfv.value) {
@@ -281,6 +317,19 @@ export async function updateLead(id: string, data: any) {
       .returning();
 
     if (!updated) return { success: false as const, data: null, error: "Lead not found" };
+
+    try {
+      const text = prepareLeadText(updated);
+      if (text) {
+        const embedding = await generateEmbedding(text);
+        await db
+          .update(leads)
+          .set({ embedding: sql`${JSON.stringify(embedding)}::vector` })
+          .where(eq(leads.id, updated.id));
+      }
+    } catch (e) {
+      console.error("Embedding regeneration failed for lead", updated.id, e);
+    }
 
     if (cfvBody && Array.isArray(cfvBody)) {
       for (const cfv of cfvBody) {
@@ -436,7 +485,12 @@ export async function searchLeads(query: string) {
     const { userId } = await auth();
     if (!userId) return { success: false as const, data: null, error: "Unauthorized" };
 
+    const user = await getOrCreateUser(userId);
+    if (!user.data) return { success: false as const, data: null, error: "User not found" };
+
     if (!query.trim()) return { success: true as const, data: [], error: null };
+
+    const searchPattern = `%${query.toLowerCase()}%`;
 
     const results = await db
       .select({
@@ -450,11 +504,28 @@ export async function searchLeads(query: string) {
       })
       .from(leads)
       .where(
-        or(
-          like(leads.companyName, `%${query}%`),
-          like(leads.contactPerson, `%${query}%`),
-          like(leads.mobile, `%${query}%`),
-        ),
+        sql`${leads.userId} = ${user.data.id} AND (
+          LOWER(${leads.companyName}) LIKE ${searchPattern}
+          OR LOWER(${leads.clientCompany}) LIKE ${searchPattern}
+          OR LOWER(${leads.builderName}) LIKE ${searchPattern}
+          OR LOWER(${leads.projectName}) LIKE ${searchPattern}
+          OR LOWER(${leads.contactPerson}) LIKE ${searchPattern}
+          OR LOWER(${leads.designation}) LIKE ${searchPattern}
+          OR LOWER(${leads.mobile}) LIKE ${searchPattern}
+          OR LOWER(${leads.email}) LIKE ${searchPattern}
+          OR LOWER(${leads.siteAddress}) LIKE ${searchPattern}
+          OR LOWER(${leads.city}) LIKE ${searchPattern}
+          OR LOWER(${leads.district}) LIKE ${searchPattern}
+          OR LOWER(${leads.state}) LIKE ${searchPattern}
+          OR LOWER(${leads.pincode}) LIKE ${searchPattern}
+          OR LOWER(${leads.existingVendor}) LIKE ${searchPattern}
+          OR LOWER(${leads.competitorNotes}) LIKE ${searchPattern}
+          OR LOWER(${leads.remarks}) LIKE ${searchPattern}
+          OR LOWER(${leads.lostReason}) LIKE ${searchPattern}
+          OR LOWER(${leads.stage}::text) LIKE ${searchPattern}
+          OR LOWER(${leads.projectType}::text) LIKE ${searchPattern}
+          OR LOWER(${leads.projectStatus}::text) LIKE ${searchPattern}
+        )`,
       )
       .orderBy(desc(leads.createdAt))
       .limit(10);

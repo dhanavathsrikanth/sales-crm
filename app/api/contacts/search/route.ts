@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { contacts, users } from "@/lib/db/schema";
-import { eq, and, or, like } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 
 export async function GET(req: NextRequest) {
   const { userId: clerkId } = await auth();
@@ -17,28 +17,37 @@ export async function GET(req: NextRequest) {
 
   if (!q) return NextResponse.json([]);
 
-  const results = await db
-    .select({
-      id: contacts.id,
-      firstName: contacts.firstName,
-      lastName: contacts.lastName,
-      mobile: contacts.mobile,
-      company: contacts.company,
-      relationship: contacts.relationship,
-    })
-    .from(contacts)
-    .where(
-      and(
-        eq(contacts.userId, user.id),
-        or(
-          like(contacts.firstName, `%${q}%`),
-          like(contacts.lastName, `%${q}%`),
-          like(contacts.mobile, `%${q}%`),
-          like(contacts.company, `%${q}%`),
-        ),
-      ),
-    )
-    .limit(limit);
+  const searchPattern = `%${q.toLowerCase()}%`;
+
+  const result = await db.execute(
+    sql`
+      SELECT id, first_name, last_name, mobile, company, relationship
+      FROM contacts
+      WHERE user_id = ${user.id}
+      AND (
+        LOWER(first_name) LIKE ${searchPattern}
+        OR LOWER(last_name) LIKE ${searchPattern}
+        OR LOWER(mobile) LIKE ${searchPattern}
+        OR LOWER(whatsapp) LIKE ${searchPattern}
+        OR LOWER(email) LIKE ${searchPattern}
+        OR LOWER(designation) LIKE ${searchPattern}
+        OR LOWER(company) LIKE ${searchPattern}
+        OR LOWER(personal_notes) LIKE ${searchPattern}
+      )
+      LIMIT ${limit}
+    `
+  );
+
+  const rows = result.rows ?? [];
+
+  const results = rows.map((r: Record<string, unknown>) => ({
+    id: r.id as string,
+    firstName: r.first_name as string,
+    lastName: r.last_name as string | null,
+    mobile: r.mobile as string | null,
+    company: r.company as string | null,
+    relationship: r.relationship as string | null,
+  }));
 
   return NextResponse.json(results);
 }

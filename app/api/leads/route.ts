@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db } from "@/lib/db";
 import { leads, activities, users, stageHistory, customFieldValues } from "@/lib/db/schema";
 import { eq, and, or, like, sql, count, desc, asc, inArray, gte, lte } from "drizzle-orm";
+import { generateEmbedding, prepareLeadText } from "@/lib/embeddings";
 
 const STAGE_ORDER = [
   "new", "contacted", "meeting_scheduled", "site_visited",
@@ -29,13 +30,30 @@ export async function GET(req: NextRequest) {
   const conditions = [];
 
   if (search) {
+    const searchPattern = `%${search.toLowerCase()}%`;
     conditions.push(
-      or(
-        like(leads.companyName, `%${search}%`),
-        like(leads.builderName, `%${search}%`),
-        like(leads.contactPerson, `%${search}%`),
-        like(leads.mobile, `%${search}%`),
-      ),
+      sql`(
+        LOWER(${leads.companyName}) LIKE ${searchPattern}
+        OR LOWER(${leads.clientCompany}) LIKE ${searchPattern}
+        OR LOWER(${leads.builderName}) LIKE ${searchPattern}
+        OR LOWER(${leads.projectName}) LIKE ${searchPattern}
+        OR LOWER(${leads.contactPerson}) LIKE ${searchPattern}
+        OR LOWER(${leads.designation}) LIKE ${searchPattern}
+        OR LOWER(${leads.mobile}) LIKE ${searchPattern}
+        OR LOWER(${leads.email}) LIKE ${searchPattern}
+        OR LOWER(${leads.siteAddress}) LIKE ${searchPattern}
+        OR LOWER(${leads.city}) LIKE ${searchPattern}
+        OR LOWER(${leads.district}) LIKE ${searchPattern}
+        OR LOWER(${leads.state}) LIKE ${searchPattern}
+        OR LOWER(${leads.pincode}) LIKE ${searchPattern}
+        OR LOWER(${leads.existingVendor}) LIKE ${searchPattern}
+        OR LOWER(${leads.competitorNotes}) LIKE ${searchPattern}
+        OR LOWER(${leads.remarks}) LIKE ${searchPattern}
+        OR LOWER(${leads.lostReason}) LIKE ${searchPattern}
+        OR LOWER(${leads.stage}::text) LIKE ${searchPattern}
+        OR LOWER(${leads.projectType}::text) LIKE ${searchPattern}
+        OR LOWER(${leads.projectStatus}::text) LIKE ${searchPattern}
+      )`,
     );
   }
 
@@ -67,7 +85,10 @@ export async function GET(req: NextRequest) {
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const totalCount = await db.$count(leads, where);
+  const [countResult] = where
+    ? await db.select({ value: sql<number>`count(*)` }).from(leads).where(where)
+    : await db.select({ value: sql<number>`count(*)` }).from(leads);
+  const totalCount = Number(countResult?.value ?? 0);
 
   let orderBy;
   switch (sort) {
@@ -151,6 +172,19 @@ export async function POST(req: NextRequest) {
       expectedSupplyDate: body.expectedSupplyDate || null,
     } as any)
     .returning();
+
+  try {
+    const text = prepareLeadText(lead);
+    if (text) {
+      const embedding = await generateEmbedding(text);
+      await db
+        .update(leads)
+        .set({ embedding: sql`${JSON.stringify(embedding)}::vector` })
+        .where(eq(leads.id, lead.id));
+    }
+  } catch (e) {
+    console.error("Embedding generation failed for lead", lead.id, e);
+  }
 
   if (body.customFieldValues && Array.isArray(body.customFieldValues)) {
     for (const cfv of body.customFieldValues) {

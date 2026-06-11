@@ -147,6 +147,7 @@ export default function QuickSearch() {
             {pageNavItems.map((item) => (
               <CommandItem
                 key={item.href}
+                value={item.label}
                 onSelect={() => navigate(item.href)}
                 className="flex items-center gap-3"
               >
@@ -164,6 +165,7 @@ export default function QuickSearch() {
             {leads.map((lead) => (
               <CommandItem
                 key={`l-${lead.id}`}
+                value={`${lead.companyName || ""} ${lead.contactPerson || ""} ${lead.city || ""} ${lead.mobile || ""}`}
                 onSelect={() => navigate(`/leads/${lead.id}`)}
                 className="flex items-center gap-3"
               >
@@ -186,6 +188,7 @@ export default function QuickSearch() {
             {contacts.map((contact) => (
               <CommandItem
                 key={`c-${contact.id}`}
+                value={`${contact.firstName} ${contact.lastName || ""} ${contact.company || ""} ${contact.mobile || ""}`}
                 onSelect={() => navigate(`/contacts/${contact.id}`)}
                 className="flex items-center gap-3"
               >
@@ -209,6 +212,7 @@ export default function QuickSearch() {
             {notes.map((note) => (
               <CommandItem
                 key={`n-${note.id}`}
+                value={note.content.slice(0, 120)}
                 onSelect={() => note.leadId ? navigate(`/leads/${note.leadId}`) : navigate("/notes")}
                 className="flex items-center gap-3"
               >
@@ -229,6 +233,7 @@ export default function QuickSearch() {
             {calls.map((call) => (
               <CommandItem
                 key={`cl-${call.id}`}
+                value={`${call.contactFirstName || ""} ${call.contactLastName || ""} ${call.leadCompanyName || ""} ${call.phoneNumber || ""}`}
                 onSelect={() => call.leadId ? navigate(`/leads/${call.leadId}`) : navigate("/calls")}
                 className="flex items-center gap-3"
               >
