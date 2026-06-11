@@ -2,6 +2,17 @@
 
 import { useState } from "react"
 import { format, parseISO } from "date-fns"
+
+function safeFormat(dateStr: string | null | undefined, fmt: string): string {
+  if (!dateStr) return ""
+  try {
+    const d = parseISO(dateStr)
+    if (isNaN(d.getTime())) return ""
+    return format(d, fmt)
+  } catch {
+    return ""
+  }
+}
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -162,7 +173,7 @@ export default function PhotoGallery({ photos, onDelete }: PhotoGalleryProps) {
                   )}
                   {photo.createdAt && (
                     <p className="mt-0.5 text-[10px] text-zinc-400">
-                      {format(parseISO(photo.createdAt), "MMM d, yyyy")}
+                      {safeFormat(photo.createdAt, "MMM d, yyyy")}
                     </p>
                   )}
                 </div>
@@ -194,7 +205,7 @@ export default function PhotoGallery({ photos, onDelete }: PhotoGalleryProps) {
                   <p className="text-sm font-medium">{lightbox.caption || "No caption"}</p>
                   <p className="text-xs text-zinc-500">
                     {(lightbox.type || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                    {lightbox.createdAt && ` · ${format(parseISO(lightbox.createdAt), "MMM d, yyyy h:mm a")}`}
+                    {lightbox.createdAt && ` · ${safeFormat(lightbox.createdAt, "MMM d, yyyy h:mm a")}`}
                   </p>
                 </div>
                 <a

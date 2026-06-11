@@ -486,13 +486,20 @@ export default function LeadDetailPage() {
             </Button>
           </div>
 
-          <PhotoGallery
-            photos={lead.photos || []}
-            onDelete={async (id) => {
-              await fetch(`/api/photos/${id}`, { method: "DELETE" });
-              queryClient.invalidateQueries({ queryKey: ["lead", id] });
+          <ErrorBoundary
+            onError={(err) => {
+              console.error("PhotoGallery error:", err);
+              toast.error("Failed to load photos");
             }}
-          />
+          >
+            <PhotoGallery
+              photos={lead.photos || []}
+              onDelete={async (photoId) => {
+                await fetch(`/api/photos/${photoId}`, { method: "DELETE" });
+                queryClient.invalidateQueries({ queryKey: ["lead", id] });
+              }}
+            />
+          </ErrorBoundary>
 
           {lead.photos?.some((p: any) => p.type === "visiting_card") && (
             <Card>
