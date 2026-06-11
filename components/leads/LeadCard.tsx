@@ -32,7 +32,7 @@ const stageConfig: Record<string, { label: string; icon: any; color: string; bg:
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#25D366" viewBox="0 0 16 16">
       <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
     </svg>
   );
@@ -40,9 +40,12 @@ function WhatsAppIcon({ className }: { className?: string }) {
 
 function GoogleMapsIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none">
-      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#4285F4"/>
-      <circle cx="12" cy="9" r="2.5" fill="white"/>
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" fill="#EA4335"/>
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 2.61 1.44 4.89 3.56 6.11L12 9V2z" fill="#FBBC04"/>
+      <path d="M12 2v7l3.44 6.11C17.56 13.89 19 11.61 19 9c0-3.87-3.13-7-7-7z" fill="#4285F4"/>
+      <path d="M8.56 15.11L12 22c1.63-2.1 3.44-5.2 3.44-8.08L12 9l-3.44 6.11z" fill="#34A853"/>
+      <circle cx="12" cy="9" r="3" fill="#1A237E"/>
     </svg>
   );
 }
@@ -156,7 +159,7 @@ export default function LeadCard({ lead, onScheduleFollowup }: Props) {
           title="View Location"
           disabled={!lead.siteAddress && !lead.latitude && !lead.longitude}
         >
-          <GoogleMapsIcon className="h-5 w-5" />
+          <GoogleMapsIcon className="h-6 w-6" />
         </button>
         <button
           onClick={(e) => {

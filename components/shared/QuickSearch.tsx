@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2, ContactRound, Sun, CalendarCheck,
   MapPin, PhoneCall, Goal, BarChart3, StickyNote, Settings,
+  FileText, Phone,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -33,6 +34,25 @@ interface Contact {
   company: string | null;
 }
 
+interface Note {
+  id: string;
+  content: string;
+  leadId: string | null;
+  contactId: string | null;
+  createdAt: string | null;
+}
+
+interface CallLog {
+  id: string;
+  contactFirstName: string | null;
+  contactLastName: string | null;
+  phoneNumber: string | null;
+  leadCompanyName: string | null;
+  leadId: string | null;
+  contactId: string | null;
+  callDate: string | null;
+}
+
 const pageNavItems = [
   { href: "/", label: "My Day", icon: Sun },
   { href: "/leads", label: "Leads", icon: Building2 },
@@ -51,75 +71,152 @@ export default function QuickSearch() {
   const { commandPaletteOpen, setCommandPaletteOpen } = useAppStore();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [calls, setCalls] = useState<CallLog[]>([]);
   const [loading, setLoading] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const fetchData = useCallback(async (q: string) => {
+    setLoading(true);
+    try {
+      const params = q ? `?q=${encodeURIComponent(q)}&limit=5` : "?limit=5";
+      const [leadsRes, contactsRes, notesRes, callsRes] = await Promise.all([
+        fetch(`/api/leads/search${params}`),
+        fetch(`/api/contacts/search${params}`),
+        fetch(`/api/notes${q ? `?search=${encodeURIComponent(q)}` : ""}`),
+        fetch(`/api/calls${q ? `?search=${encodeURIComponent(q)}` : ""}`),
+      ]);
+      if (leadsRes.ok) {
+        const data = await leadsRes.json();
+        setLeads(Array.isArray(data) ? data : data.leads?.slice(0, 5) || []);
+      }
+      if (contactsRes.ok) {
+        const data = await contactsRes.json();
+        setContacts(Array.isArray(data) ? data : data.contacts?.slice(0, 5) || []);
+      }
+      if (notesRes.ok) {
+        const data = await notesRes.json();
+        setNotes((data.notes || data || []).slice(0, 5));
+      }
+      if (callsRes.ok) {
+        const data = await callsRes.json();
+        setCalls((data.calls || data || []).slice(0, 5));
+      }
+    } catch {
+      setLeads([]);
+      setContacts([]);
+      setNotes([]);
+      setCalls([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function fetchData() {
-      setLoading(true);
-      try {
-        const [leadsRes, contactsRes] = await Promise.all([
-          fetch("/api/leads/search?q=&limit=5"),
-          fetch("/api/contacts/search?q=&limit=5"),
-        ]);
-        if (leadsRes.ok) {
-          const data = await leadsRes.json();
-          setLeads(Array.isArray(data) ? data : data.leads?.slice(0, 5) || []);
-        }
-        if (contactsRes.ok) {
-          const data = await contactsRes.json();
-          setContacts(Array.isArray(data) ? data : data.contacts?.slice(0, 5) || []);
-        }
-      } catch {
-        setLeads([]);
-        setContacts([]);
-      } finally {
-        setLoading(false);
-      }
+    if (commandPaletteOpen) {
+      setQuery("");
+      fetchData("");
     }
-    if (commandPaletteOpen) fetchData();
-  }, [commandPaletteOpen]);
+  }, [commandPaletteOpen, fetchData]);
+
+  useEffect(() => {
+    if (!commandPaletteOpen) return;
+    const timer = setTimeout(() => fetchData(query), 300);
+    return () => clearTimeout(timer);
+  }, [query, commandPaletteOpen, fetchData]);
 
   function navigate(href: string) {
     setCommandPaletteOpen(false);
     router.push(href);
   }
 
+  const hasResults = leads.length > 0 || contacts.length > 0 || notes.length > 0 || calls.length > 0;
+
   return (
     <CommandDialog open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen}>
-      <CommandInput placeholder="Search leads, contacts, or navigate pages..." />
+      <CommandInput
+        placeholder="Search leads, contacts, notes, calls..."
+        value={query}
+        onValueChange={setQuery}
+      />
       <CommandList>
         <CommandEmpty>{loading ? "Searching..." : "No results found."}</CommandEmpty>
 
-        <CommandGroup heading="Navigate">
-          {pageNavItems.map((item) => (
-            <CommandItem
-              key={item.href}
-              onSelect={() => navigate(item.href)}
-              className="flex items-center gap-3"
-            >
-              <item.icon className="h-4 w-4 text-zinc-400" />
-              <span className="text-sm font-medium">{item.label}</span>
-            </CommandItem>
-          ))}
-        </CommandGroup>
+        {!query && (
+          <CommandGroup heading="Navigate">
+            {pageNavItems.map((item) => (
+              <CommandItem
+                key={item.href}
+                onSelect={() => navigate(item.href)}
+                className="flex items-center gap-3"
+              >
+                <item.icon className="h-4 w-4 text-zinc-400" />
+                <span className="text-sm font-medium">{item.label}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
 
-        <CommandSeparator />
+        {query && hasResults && <CommandSeparator />}
+
+        {leads.length > 0 && (
+          <CommandGroup heading="Leads">
+            {leads.map((lead) => (
+              <CommandItem
+                key={`l-${lead.id}`}
+                onSelect={() => navigate(`/leads/${lead.id}`)}
+                className="flex items-center gap-3"
+              >
+                <Building2 className="h-4 w-4 text-blue-500" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium truncate">{lead.companyName || "Untitled"}</span>
+                  <span className="text-xs text-zinc-500 truncate">
+                    {lead.contactPerson || ""}
+                    {lead.city ? ` · ${lead.city}` : ""}
+                    {lead.mobile ? ` · ${lead.mobile}` : ""}
+                  </span>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
 
         {contacts.length > 0 && (
-          <CommandGroup heading="Recent Contacts">
-            {contacts.slice(0, 5).map((contact) => (
+          <CommandGroup heading="Contacts">
+            {contacts.map((contact) => (
               <CommandItem
                 key={`c-${contact.id}`}
                 onSelect={() => navigate(`/contacts/${contact.id}`)}
                 className="flex items-center gap-3"
               >
-                <ContactRound className="h-4 w-4 text-zinc-400" />
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">
+                <ContactRound className="h-4 w-4 text-emerald-500" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium truncate">
                     {contact.firstName} {contact.lastName}
                   </span>
-                  {contact.company && (
-                    <span className="text-xs text-zinc-500">{contact.company}</span>
+                  <span className="text-xs text-zinc-500 truncate">
+                    {contact.company || ""}
+                    {contact.mobile ? ` · ${contact.mobile}` : ""}
+                  </span>
+                </div>
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        )}
+
+        {notes.length > 0 && (
+          <CommandGroup heading="Notes">
+            {notes.map((note) => (
+              <CommandItem
+                key={`n-${note.id}`}
+                onSelect={() => note.leadId ? navigate(`/leads/${note.leadId}`) : navigate("/notes")}
+                className="flex items-center gap-3"
+              >
+                <StickyNote className="h-4 w-4 text-amber-500" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium truncate">{note.content.slice(0, 60)}{note.content.length > 60 ? "..." : ""}</span>
+                  {note.leadId && (
+                    <span className="text-xs text-zinc-500">Linked to lead</span>
                   )}
                 </div>
               </CommandItem>
@@ -127,21 +224,22 @@ export default function QuickSearch() {
           </CommandGroup>
         )}
 
-        {leads.length > 0 && (
-          <CommandGroup heading="Recent Leads">
-            {leads.slice(0, 5).map((lead) => (
+        {calls.length > 0 && (
+          <CommandGroup heading="Calls">
+            {calls.map((call) => (
               <CommandItem
-                key={`l-${lead.id}`}
-                onSelect={() => navigate(`/leads/${lead.id}`)}
+                key={`cl-${call.id}`}
+                onSelect={() => call.leadId ? navigate(`/leads/${call.leadId}`) : navigate("/calls")}
                 className="flex items-center gap-3"
               >
-                <Building2 className="h-4 w-4 text-zinc-400" />
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">{lead.companyName || "Untitled"}</span>
-                  <span className="text-xs text-zinc-500">
-                    {lead.contactPerson || ""}
-                    {lead.city ? ` \u2022 ${lead.city}` : ""}
-                    {lead.mobile ? ` \u2022 ${lead.mobile}` : ""}
+                <Phone className="h-4 w-4 text-violet-500" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium truncate">
+                    {call.contactFirstName || call.leadCompanyName || call.phoneNumber || "Unknown"}
+                  </span>
+                  <span className="text-xs text-zinc-500 truncate">
+                    {call.phoneNumber || ""}
+                    {call.leadCompanyName ? ` · ${call.leadCompanyName}` : ""}
                   </span>
                 </div>
               </CommandItem>
