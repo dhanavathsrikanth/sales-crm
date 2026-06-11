@@ -138,24 +138,27 @@ export default function MobileNav() {
         </div>
       </nav>
 
-      {/* Create sheet */}
+      {/* Create popover */}
       {createOpen && (
         <div className="fixed inset-0 z-50 lg:hidden" onClick={closeAll}>
-          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
           <div
             onClick={(e) => e.stopPropagation()}
-            className="absolute bottom-0 left-0 right-0 rounded-t-2xl bg-white px-5 pb-10 pt-2 shadow-xl animate-in slide-in-from-bottom-8"
+            className="absolute left-1/2 -translate-x-1/2 bottom-20 w-56 rounded-xl bg-white shadow-2xl border border-zinc-100 animate-in fade-in zoom-in-95"
+            style={{ transformOrigin: "bottom center" }}
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-zinc-300" />
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-400">Create</p>
-            <div className="flex flex-wrap gap-2">
+            {/* Tip pointing down to plus button */}
+            <div className="absolute -bottom-[7px] left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-white border-r border-b border-zinc-100" />
+            <div className="p-1.5">
               {createActions.map((a) => (
                 <button
                   key={a.href}
                   onClick={() => { closeAll(); router.push(a.href); }}
-                  className={cn("flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-medium text-white shadow-sm active:scale-95 transition-all", a.color)}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 active:scale-[0.98] transition-colors"
                 >
-                  <a.icon className="h-3.5 w-3.5" />
+                  <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", a.color)}>
+                    <a.icon className="h-4 w-4 text-white" />
+                  </div>
                   {a.label}
                 </button>
               ))}
