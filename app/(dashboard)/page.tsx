@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { useDashboard, type DashboardData } from "@/hooks/use-dashboard"
 import { useTodayOdometerLog, useCreateOrUpdateOdometerLog } from "@/hooks/use-odometer"
-import { format, formatDistanceToNow, parseISO, isToday } from "date-fns"
+import { format, formatDistanceToNow, isToday } from "date-fns"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -150,7 +150,7 @@ export default function MyDayPage() {
     for (const b of data.peopleToContact.birthdays) {
       const fullName = [b.firstName, b.lastName].filter(Boolean).join(" ")
       const isTodayBirthday = b.birthday && (() => {
-        const d = parseISO(b.birthday)
+        const d = new Date(b.birthday)
         return isToday(d)
       })()
       people.push({
@@ -1010,7 +1010,7 @@ function Section6RecentActivity({ data }: { data: DashboardData }) {
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-sm text-zinc-700">{a.description}</p>
                   <p className="mt-0.5 text-xs text-zinc-400">
-                    {a.createdAt ? formatDistanceToNow(parseISO(a.createdAt), { addSuffix: true }) : ""}
+                    {a.createdAt ? formatDistanceToNow(new Date(a.createdAt), { addSuffix: true }) : ""}
                   </p>
                 </div>
               </div>
@@ -1075,7 +1075,7 @@ function Section7QuickNotes({ data }: { data: DashboardData }) {
           >
             <p className="text-sm text-zinc-800">{note.content}</p>
             <p className="text-[10px] text-zinc-500">
-              {note.createdAt ? formatDistanceToNow(parseISO(note.createdAt), { addSuffix: true }) : ""}
+              {note.createdAt ? formatDistanceToNow(new Date(note.createdAt), { addSuffix: true }) : ""}
             </p>
           </div>
         ))}

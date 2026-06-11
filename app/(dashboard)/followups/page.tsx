@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useFollowUps, useCreateFollowUp, useUpdateFollowUp, type FollowUp } from "@/hooks/use-followups"
-import { format, isPast, parseISO, isSameDay } from "date-fns"
+import { format, isPast, isSameDay } from "date-fns"
 import PageHeader from "@/components/shared/PageHeader"
 import EmptyState from "@/components/shared/EmptyState"
 import { Button } from "@/components/ui/button"
@@ -490,7 +490,7 @@ export default function FollowUpsPage() {
             const isOverdue =
               followup.status === "pending" &&
               followup.followupDate &&
-              isPast(parseISO(followup.followupDate)) &&
+              isPast(new Date(followup.followupDate)) &&
               followup.followupDate !== today
 
             const isToday = followup.followupDate === today
@@ -560,7 +560,7 @@ export default function FollowUpsPage() {
                         <span className="flex items-center gap-1">
                           <CalendarIcon className="h-3.5 w-3.5" />
                           {followup.followupDate
-                            ? format(parseISO(followup.followupDate), "MMM d, yyyy")
+                            ? format(new Date(followup.followupDate), "MMM d, yyyy")
                             : "No date"}
                         </span>
                         {followup.followupTime && (
@@ -667,7 +667,7 @@ function MiniCalendar({
 
   const modifiers = {
     hasFollowup: (date: Date) =>
-      daysWithFollowups.some((d) => isSameDay(parseISO(d), date)),
+      daysWithFollowups.some((d) => isSameDay(new Date(d), date)),
   }
 
   const modifiersStyles = {
@@ -697,12 +697,12 @@ function MiniCalendar({
           <p className="text-sm font-medium">
             Follow-ups for {format(viewDate, "MMM d, yyyy")}
           </p>
-          {followups.filter((f) => f.followupDate && isSameDay(parseISO(f.followupDate), viewDate)).length === 0 ? (
+          {followups.filter((f) => f.followupDate && isSameDay(new Date(f.followupDate), viewDate)).length === 0 ? (
             <p className="text-sm text-muted-foreground">No follow-ups on this day.</p>
           ) : (
             <div className="space-y-2">
               {followups
-                .filter((f) => f.followupDate && isSameDay(parseISO(f.followupDate), viewDate))
+                .filter((f) => f.followupDate && isSameDay(new Date(f.followupDate), viewDate))
                 .map((f) => (
                   <div key={f.id} className="flex items-center gap-2 rounded-lg border p-2 text-sm">
                     <span>{TYPE_EMOJIS[f.type || ""] || "📌"}</span>

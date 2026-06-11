@@ -11,7 +11,7 @@ import {
   useCreateOrUpdateOdometerLog,
   useDeleteOdometerLog,
 } from "@/hooks/use-odometer"
-import { format, parseISO, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, isPast, isToday, formatDistanceToNow } from "date-fns"
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, isPast, isToday, formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -553,7 +553,7 @@ export default function MileagePage() {
               {logsQ.data.logs.map((log) => {
                 const logDate = log.logDate
                 const isIncomplete = !log.endReading
-                const isPastDate = logDate && isPast(parseISO(logDate)) && !isToday(parseISO(logDate))
+                const isPastDate = logDate && isPast(new Date(logDate)) && !isToday(new Date(logDate))
                 const isForgotten = isIncomplete && isPastDate
                 const isHighlighted = highlightDate === logDate
 
@@ -581,7 +581,7 @@ export default function MileagePage() {
                         </button>
                       </TableCell>
                       <TableCell className="font-medium text-xs whitespace-nowrap">
-                        {log.logDate ? format(parseISO(log.logDate), "MMM d") : "—"}
+                        {log.logDate ? format(new Date(log.logDate), "MMM d") : "—"}
                       </TableCell>
                       <TableCell className="text-xs">
                         <span className="flex items-center gap-1">
@@ -630,7 +630,7 @@ export default function MileagePage() {
                             <p><span className="font-medium text-foreground">TA Rate:</span> ₹{log.taRatePerKm || 4}/km</p>
                             <p><span className="font-medium text-foreground">Fuel Filled:</span> {log.fuelFilled ? `${log.fuelFilled} L` : "—"}</p>
                             {log.createdAt && (
-                              <p><span className="font-medium text-foreground">Logged:</span> {format(parseISO(log.createdAt), "MMM d, yyyy h:mm a")}</p>
+                              <p><span className="font-medium text-foreground">Logged:</span> {format(new Date(log.createdAt), "MMM d, yyyy h:mm a")}</p>
                             )}
                           </div>
                         </TableCell>

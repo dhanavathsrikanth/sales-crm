@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { useCalls, useLogCall, useUpdateCall, type CallLog } from "@/hooks/use-calls"
 import { useCreateFollowUp } from "@/hooks/use-followups"
-import { format, parseISO } from "date-fns"
+import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -320,7 +320,7 @@ export default function CallsPage() {
                       <span className="text-xs text-muted-foreground shrink-0">{c.phoneNumber}</span>
                     )}
                     <span className="text-xs text-muted-foreground shrink-0">
-                      {c.calledAt ? format(parseISO(c.calledAt), "h:mm a") : ""}
+                      {c.calledAt ? format(new Date(c.calledAt), "h:mm a") : ""}
                     </span>
                   </div>
                   <Button
@@ -489,7 +489,7 @@ export default function CallsPage() {
                             : <PhoneIncoming className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
                           }
                           <span className="text-xs text-muted-foreground">
-                            {c.calledAt ? format(parseISO(c.calledAt), "h:mm a") : "—"}
+                            {c.calledAt ? format(new Date(c.calledAt), "h:mm a") : "—"}
                           </span>
                           {getStatusBadge(c.status)}
                         </div>
@@ -600,12 +600,12 @@ export default function CallsPage() {
                       <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1">
                           <CalendarDays className="h-3 w-3" />
-                          {c.calledAt ? format(parseISO(c.calledAt), "MMM d, yyyy") : "—"}
+                          {c.calledAt ? format(new Date(c.calledAt), "MMM d, yyyy") : "—"}
                         </span>
                         {c.calledAt && (
                           <span className="flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {format(parseISO(c.calledAt), "h:mm a")}
+                            {format(new Date(c.calledAt), "h:mm a")}
                           </span>
                         )}
                         {c.phoneNumber && <span className="text-muted-foreground">{c.phoneNumber}</span>}
