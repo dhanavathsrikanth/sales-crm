@@ -8,7 +8,6 @@ import { UserButton } from "@clerk/nextjs";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import Image from "next/image";
 
 const NOTIF_KEY = "prism_crm_notif_settings";
 
@@ -48,16 +47,13 @@ export default function Topbar() {
           <Menu className="h-5 w-5" />
         </button>
 
-        <div className="flex items-center gap-2 flex-1 min-w-0 lg:flex-none">
-          <Image
+        <Link href="/" className="flex items-center gap-2 flex-1 min-w-0 lg:flex-none">
+          <img
             src="/prism-logo.png"
             alt="Prism RMC"
-            width={32}
-            height={32}
-            className="h-7 w-auto shrink-0"
-            priority
+            className="h-10 w-auto shrink-0"
           />
-        </div>
+        </Link>
 
         <div className="flex items-center gap-1">
           <button
