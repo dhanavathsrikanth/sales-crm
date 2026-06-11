@@ -87,11 +87,13 @@ export default function PhotoUploader({ leadId, onUploadComplete }: PhotoUploade
       try {
         const res = await fetch("/api/upload", { method: "POST", body: formData })
         if (!res.ok) {
-          const err = await res.json()
-          toast.error(err.error || "Upload failed")
+          let errMsg = "Upload failed"
+          try { const err = await res.json(); errMsg = err.error || errMsg } catch {}
+          toast.error(errMsg)
         } else {
-          const photo = await res.json()
-          onUploadComplete?.(photo)
+          let photo
+          try { photo = await res.json() } catch { throw new Error("Invalid response") }
+          try { onUploadComplete?.(photo) } catch (e) { console.error("onUploadComplete error:", e) }
           toast.success(`${file.name} uploaded`)
         }
       } catch {

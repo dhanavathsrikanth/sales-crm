@@ -21,6 +21,7 @@ import StageChanger from "@/components/leads/StageChanger";
 import QuickShare from "@/components/leads/QuickShare";
 import PhotoUploader from "@/components/shared/PhotoUploader";
 import PhotoGallery from "@/components/shared/PhotoGallery";
+import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import { useNotes } from "@/hooks/use-notes";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -632,13 +633,25 @@ export default function LeadDetailPage() {
           <DialogHeader>
             <DialogTitle>Upload Photo</DialogTitle>
           </DialogHeader>
-          <PhotoUploader
-            leadId={id}
-            onUploadComplete={() => {
-              queryClient.invalidateQueries({ queryKey: ["lead", id] })
-              setPhotoUploadOpen(false)
+          <ErrorBoundary
+            onError={(err) => {
+              console.error("Photo upload error:", err);
+              toast.error("Upload failed. Please check your connection and try again.");
+              setPhotoUploadOpen(false);
             }}
-          />
+          >
+            <PhotoUploader
+              leadId={id}
+              onUploadComplete={() => {
+                try {
+                  queryClient.invalidateQueries({ queryKey: ["lead", id] });
+                } catch (e) {
+                  console.error("Failed to invalidate queries:", e);
+                }
+                setPhotoUploadOpen(false);
+              }}
+            />
+          </ErrorBoundary>
         </DialogContent>
       </Dialog>
     </div>

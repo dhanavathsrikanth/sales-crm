@@ -621,13 +621,22 @@ export default function CreateLeadPage() {
             )}
           </div>
           <div className="flex gap-2">
-            {step < 5 && (
+            {step < 6 && (
               <Button type="button" onClick={() => setStep((s) => s + 1)} disabled={!canNext} size="sm" className="sm:h-10 sm:px-4">
                 <span className="hidden sm:inline">Next</span>
                 <ArrowRight className="h-4 w-4 sm:ml-1.5" />
               </Button>
             )}
-            {step >= 5 && (
+            {step === 5 && (
+              <Button type="submit" disabled={createLead.isPending} variant="outline" size="sm" className="sm:h-10 sm:px-4">
+                {createLead.isPending || uploading ? (
+                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Creating...</>
+                ) : (
+                  <><Check className="h-4 w-4 mr-1.5" /> Skip Photos &amp; Create</>
+                )}
+              </Button>
+            )}
+            {step === 6 && (
               <Button type="submit" disabled={createLead.isPending || uploading} size="sm" className="sm:h-10 sm:px-4">
                 {createLead.isPending || uploading ? (
                   <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Creating...</>
