@@ -128,7 +128,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     calls: search
-      ? allCalls.filter((c) =>
+      ? allCalls.filter((c: typeof allCalls[number]) =>
           (c.contactFirstName && c.contactFirstName.toLowerCase().includes(search.toLowerCase())) ||
           (c.contactLastName && c.contactLastName.toLowerCase().includes(search.toLowerCase())) ||
           (c.phoneNumber && c.phoneNumber.includes(search)) ||
@@ -142,7 +142,7 @@ export async function GET(req: NextRequest) {
       connectRate: callsToday > 0 ? Math.round((connectedCalls / callsToday) * 100) : 0,
       totalDurationToday: Math.round(Number(totalDurationToday[0]?.total || 0)),
     },
-    frequentContacts: frequent.map((f) => ({
+    frequentContacts: frequent.map((f: typeof frequent[number]) => ({
       id: f.contactId,
       firstName: f.firstName || "Unknown",
       lastName: f.lastName,
