@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { Bell, Search, Menu, X, AlertCircle, CalendarCheck, Flame, CheckCircle2, Settings } from "lucide-react";
 import { useAppStore } from "@/store";
@@ -8,74 +8,7 @@ import { UserButton } from "@clerk/nextjs";
 import { useDashboard } from "@/hooks/use-dashboard";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  if (hour < 21) return "Good evening";
-  return "Good night";
-}
-
-const quotes = [
-  "\"Your attitude determines your altitude\"",
-  "\"Success is not final, failure is not fatal: it is the courage to continue that counts\"",
-  "\"The only way to do great work is to love what you do\"",
-  "\"Believe you can and you're halfway there\"",
-  "\"Small daily improvements over time lead to stunning results\"",
-  "\"Every sale begins with a conversation, every relationship with trust\"",
-  "\"The best time to plant a tree was 20 years ago. The second best time is now\"",
-  "\"Don't watch the clock; do what it does. Keep going\"",
-  "\"The expert in anything was once a beginner who never gave up\"",
-  "\"Your only limit is the size of your vision and the strength of your will\"",
-  "\"Effort is the bridge between a goal and achievement\"",
-  "\"Be the reason someone believes in good business today\"",
-  "\"Success is walking from failure to failure with enthusiasm\"",
-  "\"Action is the foundational key to all success\"",
-  "\"Dream big. Start small. Act now. Move fast\"",
-  "\"Hard work beats talent when talent doesn't work hard\"",
-  "\"The secret of getting ahead is getting started — so start today\"",
-  "\"Opportunities don't happen. You create them with every visit and call\"",
-  "\"Do what you can, with what you have, where you are\"",
-  "\"It always seems impossible until it's done — then it becomes your proof\"",
-  "\"Push yourself, because no one else is going to do it for you\"",
-  "\"Great things never come from comfort zones. Get out there\"",
-  "\"Dream it. Wish it. Do it. Close it\"",
-  "\"The only bad sale is the one you didn't learn from\"",
-  "\"Your biggest competition is the person you were yesterday\"",
-  "\"Fall seven times, stand up eight. Then make the ninth call\"",
-  "\"The pain you feel today is the strength you feel tomorrow\"",
-  "\"Be stronger than your strongest excuse for not making that call\"",
-  "\"Make today so productive that yesterday looks jealous\"",
-  "\"You don't have to be great to start, but you have to start to be great\"",
-  "\"The future depends on what you do between now and sunset\"",
-  "\"Winning isn't everything, but wanting to win and working for it is\"",
-  "\"Nothing worth having comes easy. Neither does that deal — go get it\"",
-  "\"Turn every obstacle into an opportunity to upsell\"",
-  "\"Consistency beats intensity. Show up every single day\"",
-  "\"Your reputation is built on the relationships you nurture\"",
-  "\"Stay hungry, stay foolish, stay on the phone\"",
-  "\"Every master was once a disaster. Then they kept going\"",
-  "\"The key is not to prioritize what's on your schedule, but to schedule your priorities\"",
-  "\"In the middle of difficulty lies opportunity for growth\"",
-  "\"What you get by achieving your goals is not as important as who you become\"",
-  "\"Be so good they can't ignore your follow-up\"",
-  "\"Pressure is a privilege. It means someone believes in you\"",
-  "\"The way to get started is to quit talking, pick up the phone, and begin doing\"",
-  "\"If you can dream it, you can sell it. If you can sell it, you can achieve it\"",
-  "\"Done is better than perfect. Progress beats paralysis\"",
-  "\"Progress, not perfection. One call at a time\"",
-  "\"Make it happen today. Surprise yourself\"",
-  "\"Your only obligation is to give today your absolute best\"",
-  "\"Don't count the days, make the days count. Every visit matters\"",
-];
-
-function getDailyQuote(): string {
-  const start = new Date(new Date().getFullYear(), 0, 0);
-  const diff = Date.now() - start.getTime();
-  const dayOfYear = Math.floor(diff / (1000 * 60 * 60 * 24));
-  return quotes[dayOfYear % quotes.length];
-}
+import Image from "next/image";
 
 const NOTIF_KEY = "prism_crm_notif_settings";
 
@@ -100,8 +33,6 @@ export default function Topbar() {
 
   const [notifOpen, setNotifOpen] = useState(false);
 
-  const firstName = user?.firstName || "there";
-
   const overdueFollowups = dashboard?.dailyFocus?.overdueFollowups?.length || 0;
   const todayFollowups = dashboard?.dailyFocus?.todayFollowups?.length || 0;
   const hotStale = dashboard?.peopleToContact?.hotStale?.length || 0;
@@ -118,18 +49,14 @@ export default function Topbar() {
         </button>
 
         <div className="flex items-center gap-2 flex-1 min-w-0 lg:flex-none">
-          <svg className="h-5 w-5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="12" r="5" />
-            <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
-          </svg>
-          <div className="min-w-0">
-            <h2 className="text-sm font-semibold text-zinc-900 truncate">
-              {getGreeting()}, {firstName}
-            </h2>
-            <p className="text-[10px] leading-tight text-zinc-400 truncate">
-              {getDailyQuote()}
-            </p>
-          </div>
+          <Image
+            src="/prism-logo.png"
+            alt="Prism RMC"
+            width={32}
+            height={32}
+            className="h-7 w-auto shrink-0"
+            priority
+          />
         </div>
 
         <div className="flex items-center gap-1">
