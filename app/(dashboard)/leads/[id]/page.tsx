@@ -13,7 +13,7 @@ import {
   FileText, Handshake, FlaskConical, ScanLine, StickyNote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useLead, useDeleteLead, useUpdateLeadStage } from "@/hooks/use-leads";
+import { useLead, useDeleteLead, useUpdateLeadStage, useUpdateLead } from "@/hooks/use-leads";
 import { useUser } from "@clerk/nextjs";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -23,6 +23,7 @@ import PhotoUploader from "@/components/shared/PhotoUploader";
 import PhotoGallery from "@/components/shared/PhotoGallery";
 import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import { useNotes } from "@/hooks/use-notes";
+import { useCustomFields } from "@/hooks/use-custom-fields";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,12 +101,17 @@ export default function LeadDetailPage() {
   const { data: lead, isLoading, isError } = useLead(id);
   const deleteLead = useDeleteLead();
   const updateStage = useUpdateLeadStage();
+  const updateLead = useUpdateLead();
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [photoUploadOpen, setPhotoUploadOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTab, setEditTab] = useState("customer");
+  const [editForm, setEditForm] = useState<Record<string, string>>({});
   const [scanning, setScanning] = useState<string | null>(null);
   const [scanResult, setScanResult] = useState<any>(null);
   const queryClient = useQueryClient();
   const { data: linkedNotes = [] } = useNotes({ leadId: id });
+  const { data: customFields = [] } = useCustomFields();
 
   if (isLoading) {
     return (
@@ -131,6 +137,62 @@ export default function LeadDetailPage() {
 
   const handleMarkWon = () => updateStage.mutate({ id, stage: "won" });
   const handleMarkLost = () => updateStage.mutate({ id, stage: "lost" });
+
+  const openEditDialog = () => {
+    setEditTab("customer");
+    setEditForm({
+      companyName: lead.companyName || "",
+      clientCompany: lead.clientCompany || "",
+      builderName: lead.builderName || "",
+      projectName: lead.projectName || "",
+      contactPerson: lead.contactPerson || "",
+      designation: lead.designation || "",
+      mobile: lead.mobile || "",
+      email: lead.email || "",
+      existingVendor: lead.existingVendor || "",
+      competitorNotes: lead.competitorNotes || "",
+      siteAddress: lead.siteAddress || "",
+      city: lead.city || "",
+      district: lead.district || "",
+      state: lead.state || "",
+      pincode: lead.pincode || "",
+      latitude: lead.latitude || "",
+      longitude: lead.longitude || "",
+      projectType: lead.projectType || "",
+      projectStatus: lead.projectStatus || "",
+      numberOfFloors: lead.numberOfFloors?.toString() || "",
+      builtUpArea: lead.builtUpArea?.toString() || "",
+      estimatedValue: lead.estimatedValue?.toString() || "",
+      estimatedM3: lead.estimatedM3?.toString() || "",
+      monthlyM3: lead.monthlyM3?.toString() || "",
+      immediateM3: lead.immediateM3?.toString() || "",
+      expectedSupplyDate: lead.expectedSupplyDate || "",
+      remarks: lead.remarks || "",
+      stage: lead.stage || "new",
+      gradeRequirements: (lead.gradeRequirements || []).join(", "),
+    });
+    setEditOpen(true);
+  };
+
+  const handleEditSubmit = async () => {
+    try {
+      const payload: Record<string, any> = {};
+      for (const [key, value] of Object.entries(editForm)) {
+        if (key === "gradeRequirements") {
+          payload.gradeRequirements = value ? value.split(",").map((g) => g.trim()).filter(Boolean) : [];
+        } else if (key === "numberOfFloors" || key === "builtUpArea") {
+          payload[key] = value ? Number(value) : null;
+        } else {
+          payload[key] = value || null;
+        }
+      }
+      await updateLead.mutateAsync({ id, ...payload });
+      toast.success("Lead updated");
+      setEditOpen(false);
+    } catch {
+      toast.error("Failed to update lead");
+    }
+  };
 
   const score = lead.leadScore ?? 0;
   const scoreColor = score >= 70 ? "bg-emerald-500" : score >= 40 ? "bg-amber-500" : "bg-red-400";
@@ -186,6 +248,10 @@ export default function LeadDetailPage() {
               <MoreHorizontal className="h-4 w-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuItem onClick={openEditDialog}>
+                <Pencil className="h-4 w-4 mr-2" /> Edit Lead
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleMarkWon}>
                 <Trophy className="h-4 w-4 mr-2 text-emerald-500" /> Mark as Won
               </DropdownMenuItem>
@@ -659,6 +725,291 @@ export default function LeadDetailPage() {
               }}
             />
           </ErrorBoundary>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Lead</DialogTitle>
+            <DialogDescription>Update lead details below</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex gap-1 overflow-x-auto pb-1 -mx-1 px-1">
+            {[
+              { id: "customer", label: "Customer" },
+              { id: "location", label: "Location" },
+              { id: "project", label: "Project" },
+              { id: "notes", label: "Notes" },
+              { id: "custom", label: "Custom" },
+            ].map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setEditTab(t.id)}
+                className={cn(
+                  "shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                  editTab === t.id ? "bg-primary text-white" : "text-muted-foreground hover:bg-muted"
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-4 py-2">
+            {editTab === "customer" && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  ["companyName", "Company Name *", "text"],
+                  ["clientCompany", "Client Company", "text"],
+                  ["builderName", "Builder Name", "text"],
+                  ["projectName", "Project Name", "text"],
+                  ["contactPerson", "Contact Person *", "text"],
+                  ["designation", "Designation", "text"],
+                  ["mobile", "Mobile *", "text"],
+                  ["email", "Email", "email"],
+                  ["existingVendor", "Existing Vendor", "text"],
+                ].map(([key, label, type]) => (
+                  <div key={key}>
+                    <Label className="text-xs">{label}</Label>
+                    <Input
+                      type={type}
+                      value={editForm[key] || ""}
+                      onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                ))}
+                <div className="sm:col-span-2">
+                  <Label className="text-xs">Competitor Notes</Label>
+                  <Textarea
+                    value={editForm.competitorNotes || ""}
+                    onChange={(e) => setEditForm({ ...editForm, competitorNotes: e.target.value })}
+                    rows={2}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {editTab === "location" && (
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">Site Address</Label>
+                  <Textarea
+                    value={editForm.siteAddress || ""}
+                    onChange={(e) => setEditForm({ ...editForm, siteAddress: e.target.value })}
+                    rows={2}
+                    className="text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    ["city", "City"],
+                    ["district", "District"],
+                    ["state", "State"],
+                    ["pincode", "Pincode"],
+                  ].map(([key, label]) => (
+                    <div key={key}>
+                      <Label className="text-xs">{label}</Label>
+                      <Input
+                        value={editForm[key] || ""}
+                        onChange={(e) => setEditForm({ ...editForm, [key]: e.target.value })}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Latitude</Label>
+                    <Input
+                      value={editForm.latitude || ""}
+                      onChange={(e) => setEditForm({ ...editForm, latitude: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Longitude</Label>
+                    <Input
+                      value={editForm.longitude || ""}
+                      onChange={(e) => setEditForm({ ...editForm, longitude: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {editTab === "project" && (
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label className="text-xs">Project Type</Label>
+                    <select
+                      value={editForm.projectType || ""}
+                      onChange={(e) => setEditForm({ ...editForm, projectType: e.target.value })}
+                      className="h-8 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm"
+                    >
+                      <option value="">Select</option>
+                      {["residential", "commercial", "industrial", "infrastructure"].map((t) => (
+                        <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Project Status</Label>
+                    <select
+                      value={editForm.projectStatus || ""}
+                      onChange={(e) => setEditForm({ ...editForm, projectStatus: e.target.value })}
+                      className="h-8 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm"
+                    >
+                      <option value="">Select</option>
+                      {["planning", "excavation", "foundation", "structural", "finishing", "completed"].map((s) => (
+                        <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Floors</Label>
+                    <Input
+                      type="number"
+                      value={editForm.numberOfFloors || ""}
+                      onChange={(e) => setEditForm({ ...editForm, numberOfFloors: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Built-up (sq ft)</Label>
+                    <Input
+                      type="number"
+                      value={editForm.builtUpArea || ""}
+                      onChange={(e) => setEditForm({ ...editForm, builtUpArea: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Est. Value (₹)</Label>
+                    <Input
+                      type="number"
+                      value={editForm.estimatedValue || ""}
+                      onChange={(e) => setEditForm({ ...editForm, estimatedValue: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Total m³</Label>
+                    <Input
+                      type="number"
+                      value={editForm.estimatedM3 || ""}
+                      onChange={(e) => setEditForm({ ...editForm, estimatedM3: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Monthly m³</Label>
+                    <Input
+                      type="number"
+                      value={editForm.monthlyM3 || ""}
+                      onChange={(e) => setEditForm({ ...editForm, monthlyM3: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Immediate m³</Label>
+                    <Input
+                      type="number"
+                      value={editForm.immediateM3 || ""}
+                      onChange={(e) => setEditForm({ ...editForm, immediateM3: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Expected Supply Date</Label>
+                    <Input
+                      type="date"
+                      value={editForm.expectedSupplyDate || ""}
+                      onChange={(e) => setEditForm({ ...editForm, expectedSupplyDate: e.target.value })}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Grade Requirements</Label>
+                    <Input
+                      value={editForm.gradeRequirements || ""}
+                      onChange={(e) => setEditForm({ ...editForm, gradeRequirements: e.target.value })}
+                      placeholder="e.g. M20, M25"
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {editTab === "notes" && (
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">Lead Stage</Label>
+                  <select
+                    value={editForm.stage || "new"}
+                    onChange={(e) => setEditForm({ ...editForm, stage: e.target.value })}
+                    className="h-8 w-full rounded-lg border border-zinc-200 bg-white px-2 text-sm"
+                  >
+                    {["new", "contacted", "meeting_scheduled", "site_visited", "requirement_received", "quotation_sent", "negotiation", "trial_order"].map((s) => (
+                      <option key={s} value={s}>{s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label className="text-xs">Remarks / Notes</Label>
+                  <Textarea
+                    value={editForm.remarks || ""}
+                    onChange={(e) => setEditForm({ ...editForm, remarks: e.target.value })}
+                    rows={4}
+                    className="text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {editTab === "custom" && (
+              <div>
+                {customFields.length === 0 ? (
+                  <p className="text-sm text-zinc-400">No custom fields configured.</p>
+                ) : (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {customFields.map((cf) => (
+                      <div key={cf.id}>
+                        <Label className="text-xs">{cf.fieldLabel || cf.fieldName}{cf.isRequired && " *"}</Label>
+                        {cf.fieldType === "textarea" ? (
+                          <textarea
+                            value={editForm[`cf_${cf.id}`] || ""}
+                            onChange={(e) => setEditForm({ ...editForm, [`cf_${cf.id}`]: e.target.value })}
+                            className="h-16 w-full rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm"
+                          />
+                        ) : (
+                          <Input
+                            type={cf.fieldType === "number" ? "number" : "text"}
+                            value={editForm[`cf_${cf.id}`] || ""}
+                            onChange={(e) => setEditForm({ ...editForm, [`cf_${cf.id}`]: e.target.value })}
+                            className="h-8 text-sm"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditSubmit} disabled={updateLead.isPending}>
+              {updateLead.isPending ? <><Loader2 className="mr-1 h-4 w-4 animate-spin" /> Saving...</> : "Save Changes"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

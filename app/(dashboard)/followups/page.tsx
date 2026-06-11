@@ -96,6 +96,16 @@ export default function FollowUpsPage() {
     notes: "",
   })
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const leadId = params.get("leadId")
+    const leadName = params.get("leadName")
+    if (leadId) {
+      setNewFollowUp((p) => ({ ...p, leadId, leadSearch: leadName || "" }))
+      setDrawerOpen(true)
+    }
+  }, [])
+
   const [leadSearchQuery, setLeadSearchQuery] = useState("")
   const [leadResults, setLeadResults] = useState<any[]>([])
   const [leadSearching, setLeadSearching] = useState(false)

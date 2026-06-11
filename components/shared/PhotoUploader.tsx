@@ -74,33 +74,51 @@ export default function PhotoUploader({ leadId, onUploadComplete }: PhotoUploade
     setFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
-  const handleUpload = async () => {
-    if (!files.length) return
-    setUploading(true)
-    let completed = 0
-    for (const file of files) {
+  const completedRef = useRef(0)
+
+  const uploadFile = (file: File): Promise<any> => {
+    return new Promise((resolve, reject) => {
       const formData = new FormData()
       formData.append("file", file)
       formData.append("leadId", leadId)
       formData.append("type", photoType)
       if (caption) formData.append("caption", caption)
-      try {
-        const res = await fetch("/api/upload", { method: "POST", body: formData })
-        if (!res.ok) {
-          let errMsg = "Upload failed"
-          try { const err = await res.json(); errMsg = err.error || errMsg } catch {}
-          toast.error(errMsg)
-        } else {
-          let photo
-          try { photo = await res.json() } catch { throw new Error("Invalid response") }
-          try { onUploadComplete?.(photo) } catch (e) { console.error("onUploadComplete error:", e) }
-          toast.success(`${file.name} uploaded`)
+      const xhr = new XMLHttpRequest()
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const fileProgress = Math.round((e.loaded / e.total) * 100)
+          setProgress(Math.round((fileProgress * 0.7) + (completedRef.current / files.length) * 30))
         }
+      }
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          try { resolve(JSON.parse(xhr.responseText)) } catch { reject(new Error("Invalid response")) }
+        } else {
+          let errMsg = "Upload failed"
+          try { const err = JSON.parse(xhr.responseText); errMsg = err.error || errMsg } catch {}
+          reject(new Error(errMsg))
+        }
+      }
+      xhr.onerror = () => reject(new Error("Network error"))
+      xhr.open("POST", "/api/upload")
+      xhr.send(formData)
+    })
+  }
+
+  const handleUpload = async () => {
+    if (!files.length) return
+    setUploading(true)
+    completedRef.current = 0
+    for (const file of files) {
+      try {
+        const photo = await uploadFile(file)
+        try { onUploadComplete?.(photo) } catch (e) { console.error("onUploadComplete error:", e) }
+        toast.success(`${file.name} uploaded`)
       } catch {
         toast.error(`Failed to upload ${file.name}`)
       }
-      completed++
-      setProgress(Math.round((completed / files.length) * 100))
+      completedRef.current++
+      setProgress(100)
     }
     setFiles([])
     setProgress(0)

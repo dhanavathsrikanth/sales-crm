@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Plus, Grid3X3, Table2, Download, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LeadCard from "@/components/leads/LeadCard";
@@ -13,6 +14,7 @@ import LeadCardSkeleton from "@/components/shared/LeadCardSkeleton";
 import EmptyState from "@/components/shared/EmptyState";
 
 export default function LeadsPage() {
+  const router = useRouter();
   const [view, setView] = useState<"card" | "table">("card");
   const [filters, setFilters] = useState<LeadFilters>({
     search: "",
@@ -27,6 +29,11 @@ export default function LeadsPage() {
   });
 
   const { data, isLoading, isError } = useLeads(filters);
+
+  const handleScheduleFollowup = useCallback((lead: Lead) => {
+    const name = lead.companyName || lead.contactPerson || "";
+    router.push(`/followups?leadId=${lead.id}&leadName=${encodeURIComponent(name)}`);
+  }, [router]);
 
   const handleExport = useCallback(() => {
     const params = new URLSearchParams();
@@ -113,7 +120,7 @@ export default function LeadsPage() {
       ) : view === "card" ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {data?.leads.map((lead) => (
-            <LeadCard key={lead.id} lead={lead} />
+            <LeadCard key={lead.id} lead={lead} onScheduleFollowup={handleScheduleFollowup} />
           ))}
         </div>
       ) : (

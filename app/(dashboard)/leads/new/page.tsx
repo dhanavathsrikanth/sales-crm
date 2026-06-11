@@ -32,7 +32,7 @@ const formSchema = z.object({
   projectName: z.string().optional(),
   contactPerson: z.string().min(1, "Required"),
   designation: z.string().optional(),
-  mobile: z.string().min(10, "Enter valid mobile"),
+  mobile: z.string().optional(),
   email: z.string().email().optional().or(z.literal("")),
   existingVendor: z.string().optional(),
   competitorNotes: z.string().optional(),
@@ -73,6 +73,7 @@ export default function CreateLeadPage() {
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string>>({});
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const createLead = useCreateLead();
@@ -152,18 +153,36 @@ export default function CreateLeadPage() {
     return URL.createObjectURL(file);
   };
 
-  const uploadPhotos = async (leadId: string) => {
-    if (!photoFiles.length) return;
-    for (const file of photoFiles) {
+  const uploadFileWithProgress = (file: File, leadId: string): Promise<void> => {
+    return new Promise((resolve, reject) => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("leadId", leadId);
       formData.append("type", "site");
+      const xhr = new XMLHttpRequest();
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          setUploadProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      };
+      xhr.onload = () => xhr.status === 200 ? resolve() : reject(new Error("Upload failed"));
+      xhr.onerror = () => reject(new Error("Network error"));
+      xhr.open("POST", "/api/upload");
+      xhr.send(formData);
+    });
+  };
+
+  const uploadPhotos = async (leadId: string) => {
+    if (!photoFiles.length) return;
+    let completed = 0;
+    for (const file of photoFiles) {
       try {
-        await fetch("/api/upload", { method: "POST", body: formData });
+        await uploadFileWithProgress(file, leadId);
       } catch {
         toast.error(`Failed to upload ${file.name}`);
       }
+      completed++;
+      setUploadProgress(Math.round((completed / photoFiles.length) * 100));
     }
   };
 
@@ -173,22 +192,24 @@ export default function CreateLeadPage() {
         .filter(([, v]) => v)
         .map(([fieldId, value]) => ({ fieldId, value }));
       const payload = { ...values, gradeRequirements: grades, customFieldValues: cfvArray };
+      setUploading(true);
       const result = await createLead.mutateAsync(payload);
       if (photoFiles.length > 0) {
-        setUploading(true);
+        setUploadProgress(0);
         await uploadPhotos(result.id);
-        setUploading(false);
       }
+      setUploading(false);
       toast.success(photoFiles.length > 0 ? "Lead created with photos" : "Lead created successfully");
       router.push(`/leads/${result.id}`);
     } catch {
+      setUploading(false);
       toast.error("Failed to save. Please try again.");
     }
   };
 
   const formValues = form.watch();
   const canNext: boolean = step === 1
-    ? !!(formValues.companyName && formValues.contactPerson && formValues.mobile?.length >= 10)
+    ? !!(formValues.companyName && formValues.contactPerson)
     : true;
 
   return (
@@ -538,6 +559,17 @@ export default function CreateLeadPage() {
           <div className="rounded-xl border border-zinc-200 bg-white p-4 sm:p-6 shadow-sm space-y-4">
             <h2 className="font-semibold text-zinc-900">Add Photos (Optional)</h2>
             <p className="text-sm text-zinc-500">Attach site photos or documents — or just skip and create the lead</p>
+            {uploading && (
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs text-zinc-500">
+                  <span>Uploading photos...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200">
+                  <div className="h-full rounded-full bg-blue-500 transition-all" style={{ width: `${uploadProgress}%` }} />
+                </div>
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-2">
               {isMobile && (
@@ -628,9 +660,11 @@ export default function CreateLeadPage() {
               </Button>
             )}
             {step === 5 && (
-              <Button type="submit" disabled={createLead.isPending} variant="outline" size="sm" className="sm:h-10 sm:px-4">
-                {createLead.isPending || uploading ? (
-                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Creating...</>
+              <Button type="submit" disabled={createLead.isPending || uploading} variant="outline" size="sm" className="sm:h-10 sm:px-4">
+                {createLead.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Saving lead...</>
+                ) : uploading ? (
+                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Uploading ({uploadProgress}%)</>
                 ) : (
                   <><Check className="h-4 w-4 mr-1.5" /> Skip Photos &amp; Create</>
                 )}
@@ -638,8 +672,10 @@ export default function CreateLeadPage() {
             )}
             {step === 6 && (
               <Button type="submit" disabled={createLead.isPending || uploading} size="sm" className="sm:h-10 sm:px-4">
-                {createLead.isPending || uploading ? (
-                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Creating...</>
+                {createLead.isPending ? (
+                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Saving lead...</>
+                ) : uploading ? (
+                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" /> Uploading ({uploadProgress}%)</>
                 ) : (
                   <><Check className="h-4 w-4 mr-1.5" /> Create Lead</>
                 )}
