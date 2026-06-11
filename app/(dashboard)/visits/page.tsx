@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { useVisits, useCheckIn, useCheckOut } from "@/hooks/use-visits"
-import { format, formatDistanceToNow, parseISO } from "date-fns"
+import { format, formatDistanceToNow } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -311,7 +311,7 @@ export default function VisitsPage() {
                   </p>
                   <p className="text-[10px] text-emerald-600">
                     Checked in at {activeVisit.checkInTime
-                      ? format(parseISO(activeVisit.checkInTime), "h:mm a")
+                      ? format(new Date(activeVisit.checkInTime), "h:mm a")
                       : "—"}
                   </p>
                 </div>
@@ -574,12 +574,12 @@ export default function VisitsPage() {
                     <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <CalendarDays className="h-3 w-3" />
-                        {v.checkInTime ? format(parseISO(v.checkInTime), "MMM d, yyyy") : "—"}
+                        {v.checkInTime ? format(new Date(v.checkInTime), "MMM d, yyyy") : "—"}
                       </span>
                       {v.checkInTime && (
                         <span className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
-                          {format(parseISO(v.checkInTime), "h:mm a")}
+                          {format(new Date(v.checkInTime), "h:mm a")}
                         </span>
                       )}
                     </div>
