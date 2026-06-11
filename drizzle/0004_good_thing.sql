@@ -1,0 +1,3 @@
+CREATE EXTENSION IF NOT EXISTS vector;
+
+ALTER TABLE "leads" ADD COLUMN "embedding" vector(384);

@@ -29,6 +29,13 @@
       "when": 1781022363338,
       "tag": "0003_free_banshee",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781195493418,
+      "tag": "0004_good_thing",
+      "breakpoints": true
     }
   ]
 }

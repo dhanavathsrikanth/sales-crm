@@ -11,6 +11,7 @@ import {
   boolean,
   jsonb,
   foreignKey,
+  vector,
 } from "drizzle-orm/pg-core";
 import { relations, sql } from "drizzle-orm";
 
@@ -203,6 +204,7 @@ export const leads = pgTable("leads", {
   gradeRequirements: text("grade_requirements").array(),
   expectedSupplyDate: date("expected_supply_date"),
   lostReason: text("lost_reason"),
+  embedding: vector("embedding", { dimensions: 384 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
