@@ -38,17 +38,17 @@ export default function DashboardShell({ children }: { children: React.ReactNode
   const { sidebarOpen } = useAppStore();
 
   return (
-    <div className="flex min-h-screen bg-zinc-50">
+    <div className="flex min-h-screen-safe bg-zinc-50">
       <Sidebar />
       <div
         className={cn(
-          "flex flex-1 flex-col transition-all duration-300",
+          "flex flex-1 flex-col transition-all duration-300 w-full max-w-full",
           sidebarOpen ? "lg:ml-60" : "lg:ml-16",
         )}
       >
         <OfflineBanner />
         <Topbar />
-        <main className="flex-1 px-4 lg:px-8 py-4 lg:py-6 pb-24 lg:pb-8 overflow-x-hidden">
+        <main className="flex-1 px-3 sm:px-4 lg:px-8 py-3 sm:py-4 lg:py-6 pb-[72px] lg:pb-8 overflow-x-hidden">
           <Breadcrumbs />
           {children}
         </main>

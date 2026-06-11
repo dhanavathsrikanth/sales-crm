@@ -61,13 +61,25 @@ export default function MobileNav() {
     pathname.startsWith("/settings");
 
   useEffect(() => {
-    document.body.style.overflow = createOpen || moreOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (createOpen || moreOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      return () => {
+        document.body.style.overflow = "";
+        document.body.style.position = "";
+        document.body.style.top = "";
+        document.body.style.width = "";
+        window.scrollTo(0, scrollY);
+      };
+    }
   }, [createOpen, moreOpen]);
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/90 lg:hidden pb-safe shadow-[0_-1px_6px_rgba(0,0,0,0.04)]">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t border-zinc-100 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/90 lg:hidden pb-safe shadow-[0_-1px_6px_rgba(0,0,0,0.04)] will-change-transform">
         <div className="flex items-center justify-around px-1">
           {mainNavItems.slice(0, 2).map((item) => (
             <button
