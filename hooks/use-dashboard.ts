@@ -143,6 +143,7 @@ export interface DashboardData {
     m3Pipeline: number;
     goals: Goal | null;
   };
+  stageCounts: { stage: string | null; count: number }[];
   peopleToContact: {
     followupsDue: PeopleDue[];
     birthdays: BirthdayContact[];

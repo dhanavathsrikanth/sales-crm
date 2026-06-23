@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Skeleton } from "@/components/ui/skeleton"
+import LeadPipeline from "@/components/dashboard/LeadPipeline"
 import { toast } from "sonner"
 import { useUser } from "@clerk/nextjs"
 import {
@@ -248,6 +249,10 @@ export default function MyDayPage() {
       <Section1Greeting greeting={greeting} quote={quote} firstName={firstName} />
       <Section2DailyFocus data={data} />
       <Section3MyNumbers data={data} />
+      <section>
+        <h2 className="mb-4 text-lg font-semibold text-zinc-900">Pipeline Stages</h2>
+        <LeadPipeline stageCounts={data.stageCounts} />
+      </section>
       <Section4PeopleToContact data={data} allPeople={allPeople} donePeople={donePeople} setDonePeople={setDonePeople} />
       <Section5QuickLog />
       <Section6RecentActivity data={data} />

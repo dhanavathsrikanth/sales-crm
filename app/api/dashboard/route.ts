@@ -161,13 +161,19 @@ export async function GET() {
     ));
 
   const m3Pipeline = await db
-    .select({ total: sql<number>`COALESCE(SUM(estimated_m3), 0)` })
+    .select({ total: sql<number>`COALESCE(SUM(${leads.estimatedM3}), 0)` })
     .from(leads)
     .where(and(
       eq(leads.userId, userId),
       sql`${leads.stage} NOT IN ('won', 'lost')`,
-      sql`estimated_m3 IS NOT NULL`,
+      sql`${leads.estimatedM3} IS NOT NULL`,
     ));
+
+  const stageCounts = await db
+    .select({ stage: leads.stage, count: sql<number>`COUNT(*)::int` })
+    .from(leads)
+    .where(eq(leads.userId, userId))
+    .groupBy(leads.stage);
 
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
@@ -369,9 +375,10 @@ export async function GET() {
       leadsCreatedThisMonth,
       visitsThisMonth,
       dealsWonThisMonth,
-      m3Pipeline: Number(m3Pipeline[0].total),
+      m3Pipeline: Number(m3Pipeline[0]?.total ?? 0),
       goals: goals[0] || null,
     },
+    stageCounts,
     peopleToContact: {
       followupsDue: peopleDueToday,
       birthdays: birthdayContacts,
