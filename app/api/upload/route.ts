@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(record, { status: 201 });
   } catch (err: any) {
     console.error("Upload error:", err);
-    return NextResponse.json({ error: err.message || "Upload failed" }, { status: 500 });
+    console.error("Upload error stack:", err?.stack);
+    return NextResponse.json({ error: err?.message || "Upload failed" }, { status: 500 });
   }
 }

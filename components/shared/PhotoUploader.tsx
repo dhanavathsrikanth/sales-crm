@@ -114,8 +114,9 @@ export default function PhotoUploader({ leadId, onUploadComplete }: PhotoUploade
         const photo = await uploadFile(file)
         try { onUploadComplete?.(photo) } catch (e) { console.error("onUploadComplete error:", e) }
         toast.success(`${file.name} uploaded`)
-      } catch {
-        toast.error(`Failed to upload ${file.name}`)
+      } catch (e) {
+        console.error("Upload failed:", e)
+        toast.error(`Failed to upload ${file.name}: ${e instanceof Error ? e.message : "Unknown error"}`)
       }
       completedRef.current++
       setProgress(100)
