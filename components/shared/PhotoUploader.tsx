@@ -91,7 +91,7 @@ export default function PhotoUploader({ leadId, onUploadComplete }: PhotoUploade
         }
       }
       xhr.onload = () => {
-        if (xhr.status === 200) {
+        if (xhr.status >= 200 && xhr.status < 300) {
           try { resolve(JSON.parse(xhr.responseText)) } catch { reject(new Error("Invalid response")) }
         } else {
           const preview = xhr.responseText?.slice(0, 200) || "(empty)"
