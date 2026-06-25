@@ -94,8 +94,10 @@ export default function PhotoUploader({ leadId, onUploadComplete }: PhotoUploade
         if (xhr.status === 200) {
           try { resolve(JSON.parse(xhr.responseText)) } catch { reject(new Error("Invalid response")) }
         } else {
-          let errMsg = "Upload failed"
+          const preview = xhr.responseText?.slice(0, 200) || "(empty)"
+          let errMsg = `Upload failed (HTTP ${xhr.status})`
           try { const err = JSON.parse(xhr.responseText); errMsg = err.error || errMsg } catch {}
+          console.error("Upload XHR error:", xhr.status, preview)
           reject(new Error(errMsg))
         }
       }

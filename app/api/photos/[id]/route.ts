@@ -1,18 +1,69 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { db } from "@/lib/db";
 import { photos, users } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import { createHash, createHmac } from "crypto";
 
-function getR2Client() {
-  const accountId = process.env.R2_ACCOUNT_ID;
+function hmac(key: string | Buffer, str: string) {
+  return createHmac("sha256", key).update(str).digest();
+}
+
+async function deleteFromR2(key: string) {
+  const accountId = process.env.R2_ACCOUNT_ID!;
   const accessKeyId = process.env.R2_ACCESS_KEY_ID!;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY!;
-  return new S3Client({
-    region: "auto",
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: { accessKeyId, secretAccessKey },
+  const bucket = process.env.R2_BUCKET_NAME!;
+
+  const host = `${accountId}.r2.cloudflarestorage.com`;
+  const endpoint = `https://${host}/${bucket}/${key}`;
+
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]/g, "").split(".")[0] + "Z";
+  const date = amzDate.slice(0, 8);
+
+  const bodyHash = createHash("sha256").update("").digest("hex");
+
+  const canonicalRequest = [
+    "DELETE",
+    `/${bucket}/${key}`,
+    "",
+    `host:${host}`,
+    `x-amz-content-sha256:${bodyHash}`,
+    `x-amz-date:${amzDate}`,
+    "",
+    "host;x-amz-content-sha256;x-amz-date",
+    bodyHash,
+  ].join("\n");
+
+  const credentialScope = `${date}/auto/s3/aws4_request`;
+
+  const stringToSign = [
+    "AWS4-HMAC-SHA256",
+    amzDate,
+    credentialScope,
+    createHash("sha256").update(canonicalRequest).digest("hex"),
+  ].join("\n");
+
+  const dateKey = hmac(`AWS4${secretAccessKey}`, date);
+  const regionKey = hmac(dateKey, "auto");
+  const serviceKey = hmac(regionKey, "s3");
+  const signingKey = hmac(serviceKey, "aws4_request");
+  const signature = hmac(signingKey, stringToSign).toString("hex");
+
+  const authorization = [
+    `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}`,
+    "SignedHeaders=host;x-amz-content-sha256;x-amz-date",
+    `Signature=${signature}`,
+  ].join(",");
+
+  await fetch(endpoint, {
+    method: "DELETE",
+    headers: {
+      "x-amz-content-sha256": bodyHash,
+      "x-amz-date": amzDate,
+      Authorization: authorization,
+    },
   });
 }
 
@@ -33,12 +84,10 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   if (!photo) return NextResponse.json({ error: "Photo not found" }, { status: 404 });
 
   try {
-    const bucket = process.env.R2_BUCKET_NAME;
     const publicUrlBase = process.env.R2_PUBLIC_URL;
-    if (bucket && publicUrlBase && photo.url.startsWith(publicUrlBase)) {
+    if (publicUrlBase && photo.url.startsWith(publicUrlBase)) {
       const key = photo.url.replace(publicUrlBase + "/", "");
-      const client = getR2Client();
-      await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
+      await deleteFromR2(key);
     }
   } catch (err) {
     console.error("R2 delete error:", err);
