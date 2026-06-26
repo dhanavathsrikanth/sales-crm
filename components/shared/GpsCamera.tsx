@@ -8,14 +8,16 @@ import {
   Download, Upload, CheckCircle2, AlertCircle, X,
   Maximize2, ChevronLeft, ChevronRight, Trash2,
   RotateCcw, Sun, Moon, Layers, SaveAll,
-  Crosshair, Target, Share,
+  Crosshair, Target, Share, Search, Building2,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { downloadToGallery, shareFile } from "@/lib/utils/save-to-gallery"
+import { useSearchLeads } from "@/hooks/use-leads"
+import { useDebounce } from "@/hooks/use-debounce"
 import db from "@/lib/offline/db"
 
 interface GpsCameraProps {
-  leadId: string
+  leadId?: string
   onUploadComplete?: () => void
 }
 
@@ -67,6 +69,25 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
   const [activeIndex, setActiveIndex] = useState(0)
   const [fullscreenIdx, setFullscreenIdx] = useState<number | null>(null)
   const [shareStatus, setShareStatus] = useState<StepStatus>("idle")
+  const [selectedLead, setSelectedLead] = useState<{ id: string; name: string } | null>(null)
+  const [leadQuery, setLeadQuery] = useState("")
+  const [leadOpen, setLeadOpen] = useState(false)
+  const [pendingCrmId, setPendingCrmId] = useState<string | null>(null)
+  const leadDebounced = useDebounce(leadQuery, 300)
+  const { data: leadResults, isLoading: leadSearching } = useSearchLeads(leadDebounced)
+  const leadDropdownRef = useRef<HTMLDivElement>(null)
+
+  const effectiveLeadId = leadId || selectedLead?.id || null
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (leadDropdownRef.current && !leadDropdownRef.current.contains(e.target as Node)) {
+        setLeadOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [])
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -78,6 +99,12 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
     startCamera(facingMode)
     return () => stopCamera()
   }, [facingMode])
+
+  useEffect(() => {
+    if (selectedLead && pendingCrmId) {
+      handleSaveToCrm(pendingCrmId)
+    }
+  }, [selectedLead, pendingCrmId])
 
   async function startCamera(facing: "environment" | "user") {
     stopCamera()
@@ -479,6 +506,11 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
   }
 
   async function handleSaveToCrm(id: string) {
+    if (!effectiveLeadId) {
+      setPendingCrmId(id)
+      setLeadOpen(true)
+      return
+    }
     const capture = captures.find((c) => c.id === id)
     if (!capture) return
     setCaptureStatus(id, "crmStatus", "saving")
@@ -487,7 +519,7 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
       const filename = buildFilename(capture.gps, captures.indexOf(capture))
       const formData = new FormData()
       formData.append("file", blob, filename)
-      formData.append("leadId", leadId)
+      formData.append("leadId", effectiveLeadId)
       formData.append("type", "site")
       formData.append(
         "caption",
@@ -508,7 +540,7 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
         await db.syncQueue.add({
           action: "create",
           table: "photos" as any,
-          data: { leadId, gps: capture.gps },
+          data: { leadId: effectiveLeadId, gps: capture.gps },
           createdAt: new Date().toISOString(),
         })
       } catch {}
@@ -883,6 +915,68 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
                 )}
               </Button>
             </div>
+
+            {/* Inline lead selector for CRM */}
+            {leadOpen && pendingCrmId && (
+              <div ref={leadDropdownRef} className="relative">
+                <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2">
+                  <Search className="h-4 w-4 shrink-0 text-zinc-400" />
+                  <input
+                    autoFocus
+                    placeholder="Search lead to link..."
+                    value={leadQuery}
+                    onChange={(e) => setLeadQuery(e.target.value)}
+                    className="flex-1 bg-transparent text-sm text-white placeholder-zinc-500 outline-none"
+                  />
+                  {leadQuery && (
+                    <button onClick={() => setLeadQuery("")} className="text-zinc-500 hover:text-white">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+                {leadQuery.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-zinc-700 bg-zinc-800 shadow-xl">
+                    {leadSearching ? (
+                      <div className="flex justify-center py-4">
+                        <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />
+                      </div>
+                    ) : (leadResults as any[])?.length === 0 ? (
+                      <p className="py-4 text-center text-xs text-zinc-500">No leads found</p>
+                    ) : (
+                      (leadResults as any[]).slice(0, 8).map((l: any) => (
+                        <button
+                          key={l.id}
+                          onClick={() => {
+                            setSelectedLead({ id: l.id, name: l.companyName || l.contactPerson || "Lead" })
+                            setLeadOpen(false)
+                            setLeadQuery("")
+                            setPendingCrmId(null)
+                          }}
+                          className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm text-zinc-200 hover:bg-zinc-700"
+                        >
+                          <Building2 className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-medium">{l.companyName || l.contactPerson || "Unnamed"}</p>
+                            {l.city && <p className="truncate text-[11px] text-zinc-500">{l.city}</p>}
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Selected lead chip */}
+            {selectedLead && !leadOpen && (
+              <div className="flex items-center gap-2 rounded-lg bg-zinc-800 px-3 py-1.5 text-xs text-zinc-400">
+                <Building2 className="h-3 w-3 text-blue-400" />
+                <span className="truncate">{selectedLead.name}</span>
+                <button onClick={() => setSelectedLead(null)} className="ml-auto text-zinc-500 hover:text-white">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            )}
 
             {/* Batch actions */}
             {captures.length > 1 && (

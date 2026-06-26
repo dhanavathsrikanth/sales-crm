@@ -23,7 +23,7 @@ import {
 
 const navItems = [
   { href: "/", label: "My Day", icon: Sun },
-  { href: "/contacts", label: "Contacts", icon: ContactRound },
+  { href: "/gps-camera", label: "GPS Camera", icon: Navigation },
   { href: "/leads", label: "Leads", icon: Building2 },
   { href: "/calls", label: "Call Log", icon: Phone },
   { href: "/visits", label: "Visits", icon: MapPin },
@@ -31,7 +31,7 @@ const navItems = [
   { href: "/goals", label: "My Goals", icon: Target },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/notes", label: "Quick Notes", icon: StickyNote },
-  { href: "/gps-camera", label: "GPS Camera", icon: Navigation },
+  { href: "/contacts", label: "Contacts", icon: ContactRound },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 

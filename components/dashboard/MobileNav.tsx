@@ -12,15 +12,15 @@ import { useState, useEffect } from "react";
 
 const mainNavItems = [
   { href: "/", label: "Home", icon: Home },
-  { href: "/contacts", label: "Contacts", icon: ContactRound },
+  { href: "/gps-camera", label: "Camera", icon: Navigation },
   { href: "/leads", label: "Leads", icon: Building2 },
   { href: "/followups", label: "Follow-ups", icon: CalendarCheck },
   { href: "/more", label: "More", icon: Ellipsis, noLink: true as const },
 ];
 
 const secondaryPages = [
+  { href: "/contacts", label: "Contacts", icon: ContactRound },
   { href: "/visits", label: "Visits", icon: MapPin },
-  { href: "/gps-camera", label: "GPS Camera", icon: Navigation },
   { href: "/goals", label: "Goals", icon: Goal },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/notes", label: "Notes", icon: StickyNote },
@@ -52,8 +52,8 @@ export default function MobileNav() {
   };
 
   const isMoreActive =
+    pathname.startsWith("/contacts") ||
     pathname.startsWith("/visits") ||
-    pathname.startsWith("/gps-camera") ||
     pathname.startsWith("/goals") ||
     pathname.startsWith("/reports") ||
     pathname.startsWith("/notes") ||
