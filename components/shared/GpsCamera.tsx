@@ -58,7 +58,7 @@ function getAccuracyLabel(accuracy: number) {
 
 export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) {
   const [stream, setStream] = useState<MediaStream | null>(null)
-  const [state, setState] = useState<"loading" | "ready" | "session">("loading")
+  const [state, setState] = useState<"permission" | "loading" | "ready" | "session">("permission")
   const [error, setError] = useState<string | null>(null)
   const [gpsStatus, setGpsStatus] = useState("")
   const [currentGps, setCurrentGps] = useState<GpsInfo | null>(null)
@@ -96,8 +96,15 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
   const activeCapture = captures[activeIndex] || null
 
   useEffect(() => {
-    startCamera(facingMode)
-    return () => stopCamera()
+    if (state !== "permission") {
+      return () => stopCamera()
+    }
+  }, [state])
+
+  useEffect(() => {
+    if (state === "ready") {
+      startCamera(facingMode)
+    }
   }, [facingMode])
 
   useEffect(() => {
@@ -109,15 +116,70 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
   async function startCamera(facing: "environment" | "user") {
     stopCamera()
     setError(null)
+    setState("loading")
+    try {
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: facing,
+          width: { ideal: 3840 },
+          height: { ideal: 2160 },
+        },
+        audio: false,
+      }
+      const s = await navigator.mediaDevices.getUserMedia(constraints)
+      setStream(s)
+      if (videoRef.current) {
+        videoRef.current.srcObject = s
+      }
+      setState("ready")
+    } catch (err: any) {
+      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+        setError("Camera permission denied. Please allow camera access in your browser settings and try again.")
+      } else if (err?.name === "NotFoundError") {
+        setError("No camera found on this device.")
+      } else {
+        setError("Could not access camera. Please check permissions and try again.")
+      }
+      setState("permission")
+    }
+  }
+
+  async function requestCameraAndLocation() {
+    setError(null)
+    setState("loading")
     try {
       const s = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing, width: { ideal: 3840 }, height: { ideal: 2160 } },
+        video: {
+          facingMode: facingMode,
+          width: { ideal: 3840 },
+          height: { ideal: 2160 },
+        },
+        audio: false,
       })
       setStream(s)
       if (videoRef.current) videoRef.current.srcObject = s
+
+      try {
+        const pos = await getPosition()
+        setCurrentGps({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: Math.round(pos.coords.accuracy),
+          placeName: "",
+          displayName: "",
+        })
+      } catch {}
+
       setState("ready")
-    } catch {
-      setError("Camera access denied. Please allow camera permissions and try again.")
+    } catch (err: any) {
+      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+        setError("Camera permission denied. Please allow camera access in your browser settings and try again.")
+      } else if (err?.name === "NotFoundError") {
+        setError("No camera found on this device.")
+      } else {
+        setError("Could not access camera. Please check permissions and try again.")
+      }
+      setState("permission")
     }
   }
 
@@ -619,48 +681,67 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
   const allGalleryDone = captures.length > 0 && captures.every((c) => c.galleryStatus === "done")
   const allCrmDone = captures.length > 0 && captures.every((c) => c.crmStatus === "done")
 
-  if (error) {
+  if (state === "permission" || error) {
     return (
-      <div className="flex flex-col items-center gap-4 py-16">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-50">
-          <Camera className="h-8 w-8 text-red-400" />
-        </div>
-        <p className="text-sm text-zinc-500 text-center max-w-xs">{error}</p>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => startCamera(facingMode)}>
-            <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-            Try Again
-          </Button>
-          <Button variant="ghost" size="sm" onClick={toggleCamera}>
-            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-            Switch Camera
-          </Button>
+      <div className="overflow-hidden rounded-2xl bg-black">
+        <div className="flex min-h-[70vh] flex-col items-center justify-center gap-6 px-6 text-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-orange-500/20 to-orange-600/10 ring-1 ring-orange-500/20">
+            <Camera className="h-9 w-9 text-orange-400" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold text-white">Enable Camera Access</h2>
+            <p className="max-w-xs text-sm text-zinc-400 leading-relaxed">
+              {error || "Allow camera and location access to capture GPS-stamped site photos."}
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 w-full max-w-xs">
+            <Button
+              onClick={requestCameraAndLocation}
+              className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium"
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              Enable Camera & Location
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => { setError(null); requestCameraAndLocation() }}
+              className="w-full h-10 text-zinc-400 hover:text-white"
+            >
+              <RefreshCw className="mr-2 h-3.5 w-3.5" />
+              Try Again
+            </Button>
+          </div>
+          <div className="mt-4 space-y-1.5 text-[11px] text-zinc-600">
+            <p>1. Tap "Enable Camera & Location" above</p>
+            <p>2. When prompted, tap "Allow" for camera and location</p>
+            <p>3. Photos will include GPS address and coordinates</p>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-black shadow-2xl ring-1 ring-white/10">
+    <div className="overflow-hidden bg-black sm:rounded-2xl sm:shadow-2xl sm:ring-1 sm:ring-white/10">
       <canvas ref={canvasRef} className="hidden" />
 
       {/* Loading */}
       {state === "loading" && (
-        <div className="flex h-64 sm:h-72 flex-col items-center justify-center gap-3">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/80 z-10">
           <Loader2 className="h-8 w-8 animate-spin text-white/60" />
-          <p className="text-xs text-zinc-500">Starting camera...</p>
+          <p className="text-xs text-zinc-400">Starting camera...</p>
         </div>
       )}
 
       {/* Camera View */}
-      {state === "ready" && (
+      {(state === "ready" || state === "loading") && (
         <div className="relative">
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            className="w-full h-[50vh] sm:h-[65vh] object-cover"
+            className="w-full h-[100dvh] sm:h-[65vh] object-cover"
           />
 
           {/* Camera overlay controls */}
@@ -734,13 +815,13 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
 
       {/* Session Review */}
       {state === "session" && captures.length > 0 && (
-        <div className="flex flex-col pb-20 sm:pb-0">
+        <div className="flex flex-col h-[100dvh] sm:h-auto sm:pb-0">
           {/* Main preview */}
-          <div className="relative bg-black">
+          <div className="relative bg-black flex-1 min-h-0">
             <img
               src={activeCapture!.dataUrl}
               alt={`Photo ${activeIndex + 1}`}
-              className="w-full h-[40vh] sm:max-h-[55vh] object-contain cursor-pointer"
+              className="w-full h-full object-contain cursor-pointer"
               onClick={() => setFullscreenIdx(activeIndex)}
             />
 
@@ -846,7 +927,7 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
           )}
 
           {/* Actions */}
-          <div className="space-y-2 border-t border-zinc-800 bg-zinc-900 px-3 sm:px-4 py-3">
+          <div className="space-y-2 border-t border-zinc-800 bg-zinc-900 px-3 sm:px-4 py-3 overflow-y-auto max-h-[45vh] sm:max-h-none shrink-0">
             <div className="grid grid-cols-3 gap-2">
               <Button
                 variant="outline"
