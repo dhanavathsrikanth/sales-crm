@@ -267,6 +267,10 @@ export const photos = pgTable("photos", {
   fileSize: integer("file_size"),
   type: photoTypeEnum("type"),
   caption: text("caption"),
+  latitude: numeric("latitude"),
+  longitude: numeric("longitude"),
+  address: text("address"),
+  gpsAccuracy: numeric("gps_accuracy"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

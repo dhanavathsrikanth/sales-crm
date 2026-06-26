@@ -98,6 +98,9 @@ export async function POST(req: NextRequest) {
     const leadId = formData.get("leadId") as string | null;
     const type = (formData.get("type") as string) || "site";
     const caption = (formData.get("caption") as string) || null;
+    const lat = formData.get("lat") ? Number(formData.get("lat")) : null;
+    const lng = formData.get("lng") ? Number(formData.get("lng")) : null;
+    const address = (formData.get("address") as string) || null;
 
     if (!file) return NextResponse.json({ error: "No file provided" }, { status: 400 });
     if (!leadId) return NextResponse.json({ error: "leadId is required" }, { status: 400 });
@@ -139,10 +142,14 @@ export async function POST(req: NextRequest) {
         fileSize: file.size,
         type: type as any,
         caption,
+        latitude: lat ? String(lat) : null,
+        longitude: lng ? String(lng) : null,
+        address,
+        gpsAccuracy: null,
       })
       .returning();
 
-    return NextResponse.json(record, { status: 201 });
+    return NextResponse.json({ ...record, success: true }, { status: 201 });
   } catch (err: any) {
     console.error("Upload error:", err);
     return NextResponse.json(

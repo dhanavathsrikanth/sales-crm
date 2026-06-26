@@ -3,7 +3,9 @@
 import { useState, useRef, useEffect } from "react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { Camera, MapPin, Loader2, Navigation, RefreshCw } from "lucide-react"
+import { Camera, MapPin, Loader2, Navigation, RefreshCw, Download, Upload, CheckCircle2, AlertCircle, X, Maximize2 } from "lucide-react"
+import { saveToGallery } from "@/lib/utils/save-to-gallery"
+import db from "@/lib/offline/db"
 
 interface GpsCameraProps {
   leadId: string
@@ -18,12 +20,20 @@ interface GpsInfo {
   displayName: string
 }
 
+type StepStatus = "idle" | "saving" | "done" | "failed"
+
 export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) {
   const [stream, setStream] = useState<MediaStream | null>(null)
-  const [state, setState] = useState<"loading" | "ready" | "captured" | "uploading">("loading")
+  const [state, setState] = useState<"loading" | "ready" | "captured">("loading")
   const [gps, setGps] = useState<GpsInfo | null>(null)
-  const [gpsStatus, setGpsStatus] = useState<string>("")
+  const [gpsStatus, setGpsStatus] = useState("")
   const [error, setError] = useState<string | null>(null)
+
+  const [galleryStatus, setGalleryStatus] = useState<StepStatus>("idle")
+  const [crmStatus, setCrmStatus] = useState<StepStatus>("idle")
+  const [manualModal, setManualModal] = useState(false)
+  const [capturedDataUrl, setCapturedDataUrl] = useState<string | null>(null)
+  const [capturedBlob, setCapturedBlob] = useState<Blob | null>(null)
 
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -36,6 +46,10 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
 
   async function startCamera() {
     setError(null)
+    setGalleryStatus("idle")
+    setCrmStatus("idle")
+    setCapturedDataUrl(null)
+    setCapturedBlob(null)
     try {
       const s = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment", width: { ideal: 3840 }, height: { ideal: 2160 } },
@@ -97,7 +111,6 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
     ctx.font = `bold ${placeSize}px sans-serif`
     ctx.textAlign = "left"
     ctx.textBaseline = "top"
-    const placeWidth = ctx.measureText(placeText).width
     ctx.fillText(placeText, pad, topY + pad)
 
     ctx.fillStyle = "#F97316"
@@ -166,50 +179,106 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
     ctx.drawImage(video, 0, 0)
     drawStamp(ctx, canvas.width, canvas.height, info)
 
-    const dataUrl = canvas.toDataURL("image/jpeg", 0.6)
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.7)
+    setCapturedDataUrl(dataUrl)
     if (previewRef.current) previewRef.current.src = dataUrl
 
     setState("captured")
     stopCamera()
   }
 
-  async function handleUpload() {
+  function pad(n: number) { return n.toString().padStart(2, "0") }
+
+  function buildFilename(info: GpsInfo) {
+    const now = new Date()
+    const loc = (info.placeName || "Unknown")
+      .replace(/[^a-zA-Z0-9]/g, "_")
+      .slice(0, 30)
+    const y = now.getFullYear()
+    const m = pad(now.getMonth() + 1)
+    const d = pad(now.getDate())
+    const h = pad(now.getHours())
+    const min = pad(now.getMinutes())
+    return `PRISM_RMC_${loc}_${y}-${m}-${d}_${h}${min}.jpg`
+  }
+
+  async function handleSaveAndUpload() {
     const canvas = canvasRef.current
     if (!canvas || !gps) return
 
-    setState("uploading")
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => {
+        if (b) resolve(b)
+        else reject(new Error("Canvas toBlob failed"))
+      }, "image/jpeg", 0.82)
+    })
+    setCapturedBlob(blob)
 
-    try {
-      const blob = await new Promise<Blob>((resolve, reject) => {
-        canvas.toBlob((b) => {
-          if (b) resolve(b)
-          else reject(new Error("Canvas toBlob failed"))
-        }, "image/jpeg", 0.82)
-      })
+    const filename = buildFilename(gps)
 
-      const formData = new FormData()
-      formData.append("file", blob, `gps_${Date.now()}.jpg`)
-      formData.append("leadId", leadId)
-      formData.append("type", "site")
-      formData.append("caption", `📍 ${gps.placeName || "GPS Photo"} · ${gps.lat.toFixed(6)}, ${gps.lng.toFixed(6)}`)
+    const galleryPromise = (async () => {
+      setGalleryStatus("saving")
+      try {
+        await saveToGallery(blob, filename)
+        setGalleryStatus("done")
+      } catch {
+        setGalleryStatus("failed")
+        throw new Error("gallery failed")
+      }
+    })()
 
-      const xhr = new XMLHttpRequest()
-      await new Promise<void>((resolve, reject) => {
-        xhr.onload = () => {
-          if (xhr.status >= 200 && xhr.status < 300) resolve()
-          else reject(new Error(`Upload failed (${xhr.status})`))
-        }
-        xhr.onerror = () => reject(new Error("Network error"))
-        xhr.open("POST", "/api/upload")
-        xhr.send(formData)
-      })
+    const crmPromise = (async () => {
+      setCrmStatus("saving")
+      try {
+        const formData = new FormData()
+        formData.append("file", blob, filename)
+        formData.append("leadId", leadId)
+        formData.append("type", "site")
+        formData.append("caption", `📍 ${gps.placeName || "GPS Photo"} · ${gps.lat.toFixed(6)}, ${gps.lng.toFixed(6)}`)
+        formData.append("lat", gps.lat.toString())
+        formData.append("lng", gps.lng.toString())
+        formData.append("address", gps.displayName)
 
-      toast.success("GPS photo uploaded")
+        const res = await fetch("/api/upload", { method: "POST", body: formData })
+        if (!res.ok) throw new Error(`Upload failed (${res.status})`)
+        setCrmStatus("done")
+      } catch (err: any) {
+        setCrmStatus("failed")
+        try {
+          await db.syncQueue.add({
+            action: "create",
+            table: "photos" as any,
+            data: { leadId, fileName: filename, gps },
+            createdAt: new Date().toISOString(),
+          })
+        } catch {}
+        throw err
+      }
+    })()
+
+    const results = await Promise.allSettled([galleryPromise, crmPromise])
+
+    const galleryOk = results[0].status === "fulfilled"
+    const crmOk = results[1].status === "fulfilled"
+
+    if (galleryOk && crmOk) {
+      toast.success("📸 Photo saved to Gallery + CRM")
       onUploadComplete?.()
-    } catch (err: any) {
-      console.error("GPS upload error:", err)
-      toast.error(`Upload failed: ${err.message}`)
-      setState("captured")
+      return
+    }
+
+    if (galleryOk && !crmOk) {
+      toast.error("Photo saved to Gallery. CRM upload queued for retry.")
+    }
+
+    if (!galleryOk && crmOk) {
+      setManualModal(true)
+      toast.error("Tap and hold the photo to save manually.")
+    }
+
+    if (!galleryOk && !crmOk) {
+      setManualModal(true)
+      toast.error("Both saves failed. Tap and hold to save photo manually.")
     }
   }
 
@@ -218,7 +287,28 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
     setGps(null)
     setGpsStatus("")
     setError(null)
+    setCapturedDataUrl(null)
+    setCapturedBlob(null)
+    setGalleryStatus("idle")
+    setCrmStatus("idle")
+    setManualModal(false)
     startCamera()
+  }
+
+  function StepIndicator({ label, status, icon: Icon }: { label: string; status: StepStatus; icon: typeof Download }) {
+    return (
+      <div className="flex items-center gap-2 text-xs">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800">
+          {status === "idle" && <Icon className="h-3 w-3 text-zinc-500" />}
+          {status === "saving" && <Loader2 className="h-3 w-3 animate-spin text-orange-400" />}
+          {status === "done" && <CheckCircle2 className="h-3 w-3 text-emerald-400" />}
+          {status === "failed" && <AlertCircle className="h-3 w-3 text-red-400" />}
+        </div>
+        <span className={status === "done" ? "text-emerald-400" : status === "failed" ? "text-red-400" : "text-zinc-400"}>
+          {label}: {status === "idle" ? "Ready" : status === "saving" ? `${label === "Gallery" ? "Saving" : "Uploading"}...` : status === "done" ? `✅ In ${label}` : "Failed"}
+        </span>
+      </div>
+    )
   }
 
   if (error) {
@@ -233,6 +323,8 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
       </div>
     )
   }
+
+  const done = galleryStatus === "done" && crmStatus === "done"
 
   return (
     <div className="relative overflow-hidden rounded-lg bg-black">
@@ -266,9 +358,21 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
         </>
       )}
 
-      {(state === "captured" || state === "uploading") && (
+      {(state === "captured" || done) && (
         <>
-          <img ref={previewRef} alt="Captured" className="w-full max-h-[70vh] object-contain" />
+          <div className="relative">
+            <img ref={previewRef} alt="Captured" className="w-full max-h-[70vh] object-contain" />
+            {capturedDataUrl && (
+              <Button
+                size="icon"
+                variant="ghost"
+                className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 text-white hover:bg-black/70"
+                onClick={() => setManualModal(true)}
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
           {gps && (
             <div className="border-t border-zinc-700 bg-zinc-900 p-3 text-xs text-zinc-400">
               <div className="flex items-center gap-1.5">
@@ -278,20 +382,61 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
               </div>
             </div>
           )}
-          <div className="flex justify-center gap-3 bg-zinc-900 p-4">
-            <Button variant="outline" onClick={handleRetake} disabled={state === "uploading"}>
-              <RefreshCw className="mr-1.5 h-4 w-4" />
-              Retake
-            </Button>
-            <Button onClick={handleUpload} disabled={state === "uploading"}>
-              {state === "uploading" ? (
-                <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> Uploading...</>
-              ) : (
-                <><Navigation className="mr-1.5 h-4 w-4" /> Upload GPS Photo</>
-              )}
-            </Button>
-          </div>
+          {!done && (
+            <div className="space-y-2 border-t border-zinc-700 bg-zinc-900 px-4 py-3">
+              <StepIndicator label="Gallery" status={galleryStatus} icon={Download} />
+              <StepIndicator label="CRM" status={crmStatus} icon={Upload} />
+              <Button
+                className="mt-2 w-full h-9 text-xs"
+                onClick={handleSaveAndUpload}
+                disabled={galleryStatus !== "idle" && crmStatus !== "idle"}
+              >
+                <Navigation className="mr-1.5 h-4 w-4" />
+                Save to Gallery + CRM
+              </Button>
+              <div className="flex justify-center">
+                <Button variant="ghost" size="sm" className="h-7 text-xs text-zinc-500" onClick={handleRetake}>
+                  <RefreshCw className="mr-1 h-3 w-3" />
+                  Retake
+                </Button>
+              </div>
+            </div>
+          )}
+          {done && (
+            <div className="border-t border-zinc-700 bg-zinc-900 p-4 text-center">
+              <p className="mb-2 text-sm text-emerald-400">✅ Photo saved to Gallery & CRM</p>
+              <div className="flex justify-center gap-3">
+                <Button size="sm" variant="outline" onClick={handleRetake}>
+                  <Camera className="mr-1.5 h-4 w-4" />
+                  Take Another
+                </Button>
+              </div>
+            </div>
+          )}
         </>
+      )}
+
+      {manualModal && capturedDataUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setManualModal(false)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white/60 hover:text-white"
+            onClick={() => setManualModal(false)}
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <img
+            src={capturedDataUrl}
+            alt="Full size"
+            className="max-h-[90vh] max-w-full rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="absolute bottom-8 left-0 right-0 text-center">
+            <p className="text-sm text-white/80">Tap and hold the photo → Save to Photos</p>
+          </div>
+        </div>
       )}
     </div>
   )
