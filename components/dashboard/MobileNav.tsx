@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   Home, ContactRound, Building2, CalendarCheck, Ellipsis,
-  MapPin, Phone, Goal, BarChart3, StickyNote, Settings, Gauge,
+  MapPin, Phone, Goal, BarChart3, StickyNote, Navigation, Settings, Gauge,
   Plus, UserPlus, UserRoundPlus
 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -20,7 +20,7 @@ const mainNavItems = [
 
 const secondaryPages = [
   { href: "/visits", label: "Visits", icon: MapPin },
-  { href: "/calls", label: "Calls", icon: Phone },
+  { href: "/gps-camera", label: "GPS Camera", icon: Navigation },
   { href: "/goals", label: "Goals", icon: Goal },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/notes", label: "Notes", icon: StickyNote },
@@ -53,7 +53,7 @@ export default function MobileNav() {
 
   const isMoreActive =
     pathname.startsWith("/visits") ||
-    pathname.startsWith("/calls") ||
+    pathname.startsWith("/gps-camera") ||
     pathname.startsWith("/goals") ||
     pathname.startsWith("/reports") ||
     pathname.startsWith("/notes") ||

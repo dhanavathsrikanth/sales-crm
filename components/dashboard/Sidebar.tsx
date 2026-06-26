@@ -15,6 +15,7 @@ import {
   Target,
   BarChart3,
   StickyNote,
+  Navigation,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/goals", label: "My Goals", icon: Target },
   { href: "/reports", label: "Reports", icon: BarChart3 },
   { href: "/notes", label: "Quick Notes", icon: StickyNote },
+  { href: "/gps-camera", label: "GPS Camera", icon: Navigation },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
