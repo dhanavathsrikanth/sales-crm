@@ -6,7 +6,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { formatDistanceToNow } from "date-fns";
 import {
-  ArrowLeft, Phone, MessageSquare, Calendar, MapPin,
+  ArrowLeft, Phone, MessageSquare, Calendar, MapPin, Navigation,
   Camera, Clock, Trash2, Trophy, Frown, MoreHorizontal,
   Pencil, Plus, ExternalLink, ImageIcon, Loader2, ChevronRight,
   CircleDot, PhoneCall, CalendarCheck, ClipboardList,
@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import StageChanger from "@/components/leads/StageChanger";
 import QuickShare from "@/components/leads/QuickShare";
 import PhotoUploader from "@/components/shared/PhotoUploader";
+import GpsCamera from "@/components/shared/GpsCamera";
 import PhotoGallery from "@/components/shared/PhotoGallery";
 import ErrorBoundary from "@/components/shared/ErrorBoundary";
 import { useNotes } from "@/hooks/use-notes";
@@ -112,6 +113,7 @@ export default function LeadDetailPage() {
   const updateLead = useUpdateLead();
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [photoUploadOpen, setPhotoUploadOpen] = useState(false);
+  const [gpsCameraOpen, setGpsCameraOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editTab, setEditTab] = useState("customer");
   const [editForm, setEditForm] = useState<Record<string, string>>({});
@@ -554,10 +556,16 @@ export default function LeadDetailPage() {
         <TabsContent value="photos" className="mt-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-zinc-900">Photos</h3>
-            <Button size="sm" onClick={() => setPhotoUploadOpen(true)}>
-              <Camera className="h-4 w-4 mr-1.5" />
-              Upload Photo
-            </Button>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => setGpsCameraOpen(true)}>
+                <MapPin className="h-4 w-4 mr-1.5" />
+                GPS Camera
+              </Button>
+              <Button size="sm" onClick={() => setPhotoUploadOpen(true)}>
+                <Camera className="h-4 w-4 mr-1.5" />
+                Upload Photo
+              </Button>
+            </div>
           </div>
 
           <ErrorBoundary
@@ -733,6 +741,27 @@ export default function LeadDetailPage() {
               }}
             />
           </ErrorBoundary>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={gpsCameraOpen} onOpenChange={setGpsCameraOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Navigation className="h-4 w-4 text-orange-500" />
+              GPS Camera
+            </DialogTitle>
+            <DialogDescription>
+              Capture a site photo with GPS location stamp
+            </DialogDescription>
+          </DialogHeader>
+          <GpsCamera
+            leadId={id}
+            onUploadComplete={() => {
+              queryClient.invalidateQueries({ queryKey: ["lead", id] });
+              setGpsCameraOpen(false);
+            }}
+          />
         </DialogContent>
       </Dialog>
 
