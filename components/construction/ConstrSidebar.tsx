@@ -34,7 +34,7 @@ export default function ConstrSidebar() {
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-zinc-200 bg-white text-zinc-900 transition-transform duration-200 md:flex"
+        "fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-zinc-200 bg-white text-zinc-900 transition-transform duration-200 lg:flex"
       )}
     >
       <div className="flex h-14 items-center border-b border-zinc-200 px-4">
