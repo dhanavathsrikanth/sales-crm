@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import {
   Home, ContactRound, Building2, CalendarCheck, Ellipsis,
   MapPin, Phone, Goal, BarChart3, StickyNote, Navigation, Settings, Gauge,
-  Plus, UserPlus, UserRoundPlus
+  Plus, UserPlus, UserRoundPlus, HardHat
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -26,6 +26,7 @@ const secondaryPages = [
   { href: "/notes", label: "Notes", icon: StickyNote },
   { href: "/mileage", label: "Mileage", icon: Gauge },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/construction", label: "Construction", icon: HardHat },
 ];
 
 const createActions = [
@@ -58,7 +59,8 @@ export default function MobileNav() {
     pathname.startsWith("/reports") ||
     pathname.startsWith("/notes") ||
     pathname.startsWith("/mileage") ||
-    pathname.startsWith("/settings");
+    pathname.startsWith("/settings") ||
+    pathname.startsWith("/construction");
 
   useEffect(() => {
     if (createOpen || moreOpen) {
