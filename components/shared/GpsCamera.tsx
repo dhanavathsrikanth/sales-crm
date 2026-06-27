@@ -117,13 +117,15 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
     stopCamera()
     setError(null)
     setState("loading")
+    await attemptStartCamera(facing)
+  }
+
+  async function attemptStartCamera(facing: "environment" | "user", resolution?: { w: number; h: number }) {
     try {
       const constraints: MediaStreamConstraints = {
-        video: {
-          facingMode: facing,
-          width: { ideal: 3840 },
-          height: { ideal: 2160 },
-        },
+        video: resolution
+          ? { facingMode: facing, width: { ideal: resolution.w }, height: { ideal: resolution.h } }
+          : { facingMode: facing },
         audio: false,
       }
       const s = await navigator.mediaDevices.getUserMedia(constraints)
@@ -133,14 +135,29 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
       }
       setState("ready")
     } catch (err: any) {
-      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+      const name = err?.name
+      if (name === "OverconstrainedError" || name === "NotFoundError") {
+        if (!resolution) {
+          setError("No camera found on this device.")
+          setState("permission")
+        } else if (resolution.w > 1280) {
+          await attemptStartCamera(facing, { w: 1280, h: 720 })
+        } else {
+          await attemptStartCamera(facing)
+        }
+      } else if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         setError("Camera permission denied. Please allow camera access in your browser settings and try again.")
-      } else if (err?.name === "NotFoundError") {
-        setError("No camera found on this device.")
+        setState("permission")
+      } else if (name === "NotReadableError") {
+        setError("Camera is busy or unavailable. Close other apps using the camera and try again.")
+        setState("permission")
+      } else if (name === "AbortError") {
+        setError("Camera access was interrupted. Please try again.")
+        setState("permission")
       } else {
         setError("Could not access camera. Please check permissions and try again.")
+        setState("permission")
       }
-      setState("permission")
     }
   }
 
@@ -149,11 +166,7 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
     setState("loading")
     try {
       const s = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: facingMode,
-          width: { ideal: 3840 },
-          height: { ideal: 2160 },
-        },
+        video: { facingMode: facingMode },
         audio: false,
       })
       setStream(s)
@@ -172,10 +185,15 @@ export default function GpsCamera({ leadId, onUploadComplete }: GpsCameraProps) 
 
       setState("ready")
     } catch (err: any) {
-      if (err?.name === "NotAllowedError" || err?.name === "PermissionDeniedError") {
+      const name = err?.name
+      if (name === "NotAllowedError" || name === "PermissionDeniedError") {
         setError("Camera permission denied. Please allow camera access in your browser settings and try again.")
-      } else if (err?.name === "NotFoundError") {
+      } else if (name === "NotFoundError") {
         setError("No camera found on this device.")
+      } else if (name === "NotReadableError") {
+        setError("Camera is busy or unavailable. Close other apps using the camera and try again.")
+      } else if (name === "AbortError") {
+        setError("Camera access was interrupted. Please try again.")
       } else {
         setError("Could not access camera. Please check permissions and try again.")
       }
