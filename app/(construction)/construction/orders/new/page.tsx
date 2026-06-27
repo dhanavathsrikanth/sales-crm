@@ -128,7 +128,7 @@ export default function NewOrderPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input
                   placeholder="Name *"
                   value={newCustomer.name}
@@ -198,7 +198,7 @@ export default function NewOrderPage() {
                     </select>
 
                     {item.productId === "__custom__" && (
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input
                           placeholder="Size label (e.g. 2 inch)"
                           value={item.customSizeLabel}

@@ -67,7 +67,7 @@ export default function NewProductPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-sm font-medium text-zinc-700 mb-1 block">Size Label</label>
             <input
@@ -88,7 +88,7 @@ export default function NewProductPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-sm font-medium text-zinc-700 mb-1 block">Weight per Unit</label>
             <input
@@ -132,7 +132,7 @@ export default function NewProductPage() {
 
         <div className="border-t border-zinc-100 pt-4">
           <h4 className="text-sm font-semibold text-zinc-900 mb-3">Pricing (optional, can set later)</h4>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-xs text-zinc-500 mb-1 block">Price per Piece (₹)</label>
               <input

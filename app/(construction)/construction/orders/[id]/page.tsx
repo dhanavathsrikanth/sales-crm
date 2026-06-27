@@ -62,13 +62,13 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               {statusFlow.map((s, i) => (
                 <div key={s} className="flex items-center">
                   <div className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium",
+                    "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-medium",
                     i <= currentIndex ? "bg-emerald-100 text-emerald-700" : "bg-zinc-100 text-zinc-400"
                   )}>
                     {s}
                   </div>
                   {i < statusFlow.length - 1 && (
-                    <div className={cn("w-4 h-px mx-0.5 sm:w-6 sm:mx-1", i < currentIndex ? "bg-emerald-400" : "bg-zinc-200")} />
+                    <div className={cn("w-3 h-px mx-0.5 sm:w-6 sm:mx-1", i < currentIndex ? "bg-emerald-400" : "bg-zinc-200")} />
                   )}
                 </div>
               ))}

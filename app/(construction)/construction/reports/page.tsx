@@ -161,8 +161,8 @@ export default function ReportsPage() {
         <div className="rounded-xl border border-zinc-200 bg-white p-5">
           <h3 className="font-semibold text-zinc-900 mb-4">Product Breakdown</h3>
           {productPieData.length > 0 ? (
-            <div className="h-64 flex items-center">
-              <div className="h-full w-1/2">
+            <div className="h-64 flex flex-col sm:flex-row items-center">
+              <div className="h-48 sm:h-full w-full sm:w-1/2">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -182,7 +182,7 @@ export default function ReportsPage() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="w-1/2 space-y-3 pl-4">
+              <div className="w-full sm:w-1/2 space-y-3 sm:pl-4 pt-4 sm:pt-0">
                 {productPieData.map((entry, idx) => (
                   <div key={entry.name} className="flex items-center gap-2">
                     <span

@@ -26,7 +26,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
       />
 
       <div className="rounded-xl border border-zinc-200 bg-white p-5">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           {customer.phone && (
             <>
               <span className="text-zinc-400">Phone</span>

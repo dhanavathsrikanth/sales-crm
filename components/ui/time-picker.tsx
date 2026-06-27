@@ -4,7 +4,6 @@ import * as React from "react"
 import { ClockIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
 import {
   Popover,
   PopoverContent,
@@ -40,29 +39,26 @@ function TimePicker({
 
   const [hour, minute] = value ? value.split(":") : ["", ""]
 
-  const handleHourChange = (h: string) => {
-    onChange?.(`${h}:${minute || "00"}`)
+  const handleHourChange = (h: string | null) => {
+    if (h) onChange?.(`${h}:${minute || "00"}`)
   }
 
-  const handleMinuteChange = (m: string) => {
-    onChange?.(`${hour || "00"}:${m}`)
+  const handleMinuteChange = (m: string | null) => {
+    if (m) onChange?.(`${hour || "00"}:${m}`)
   }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          disabled={disabled}
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground",
-            className
-          )}
-        >
-          <ClockIcon className="mr-2 size-4" />
-          {value || placeholder}
-        </Button>
+      <PopoverTrigger
+        disabled={disabled}
+        className={cn(
+          "inline-flex items-center gap-2 w-full justify-start text-left font-normal rounded-lg border border-zinc-200 px-3 py-2 text-sm hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-emerald-500",
+          !value && "text-zinc-400",
+          className
+        )}
+      >
+        <ClockIcon className="size-4 shrink-0" />
+        {value || placeholder}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-4" align="start">
         <div className="flex items-center gap-2">

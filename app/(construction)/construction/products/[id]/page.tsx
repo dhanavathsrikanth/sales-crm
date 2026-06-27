@@ -50,7 +50,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
           {product.dimensions && (
             <>
               <div><span className="text-zinc-400">Dimensions</span></div>
@@ -80,7 +80,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         {!!product.specs && typeof product.specs === "object" && (
           <div className="border-t border-zinc-100 pt-4">
             <h4 className="text-sm font-semibold text-zinc-900 mb-2">Technical Specifications</h4>
-            <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
               {Object.entries(product.specs as Record<string, string>).map(([key, value]) => (
                 <div key={key} className="flex justify-between">
                   <span className="text-zinc-400">{key.replace(/([A-Z])/g, ' $1').trim()}</span>

@@ -85,7 +85,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
 
           <div className="rounded-xl border border-zinc-200 bg-white p-5">
             <h3 className="font-semibold text-zinc-900 mb-3">Details</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               {lead.siteAddress && (
                 <>
                   <span className="text-zinc-400">Site Address</span>

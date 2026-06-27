@@ -166,7 +166,7 @@ export default function FollowupsPage() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-zinc-700 mb-1 block">Follow-up Date *</label>
               <DatePicker
@@ -183,7 +183,7 @@ export default function FollowupsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="text-sm font-medium text-zinc-700 mb-1 block">Type</label>
               <select
@@ -243,13 +243,13 @@ export default function FollowupsPage() {
       )}
 
       <div className="space-y-2">
-        <div className="flex gap-1 bg-zinc-100 rounded-lg p-1">
+        <div className="flex gap-1 bg-zinc-100 rounded-lg p-1 overflow-x-auto">
           {statusFilters.map((f) => (
             <button
               key={f.label}
               onClick={() => setStatus(f.value)}
               className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                "px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-colors",
                 status === f.value
                   ? "bg-white text-emerald-700 shadow-sm"
                   : "text-zinc-600 hover:text-zinc-900"
@@ -259,13 +259,13 @@ export default function FollowupsPage() {
             </button>
           ))}
         </div>
-        <div className="flex gap-1 bg-zinc-100 rounded-lg p-1">
+        <div className="flex gap-1 bg-zinc-100 rounded-lg p-1 overflow-x-auto">
           {typeFilters.map((f) => (
             <button
               key={f.label}
               onClick={() => setTypeFilter(f.value)}
               className={cn(
-                "px-3 py-1.5 text-sm font-medium rounded-md transition-colors",
+                "px-3 py-1.5 text-sm font-medium rounded-md whitespace-nowrap transition-colors",
                 typeFilter === f.value
                   ? "bg-white text-emerald-700 shadow-sm"
                   : "text-zinc-600 hover:text-zinc-900"
@@ -300,27 +300,27 @@ export default function FollowupsPage() {
                   isOverdue ? "border-red-200" : "border-zinc-200"
                 )}
               >
-                <div className="flex items-start justify-between">
-                  <div>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-zinc-900 text-sm">
+                      <h3 className="font-semibold text-zinc-900 text-sm truncate">
                         {f.projectName || "Untitled Lead"}
                       </h3>
                       {isOverdue && (
-                        <span className="text-[10px] font-medium text-red-600 bg-red-50 px-1.5 py-0.5 rounded">
+                        <span className="text-[10px] font-medium text-red-600 bg-red-50 px-1.5 py-0.5 rounded shrink-0">
                           Overdue
                         </span>
                       )}
                     </div>
                     {f.customerName && (
-                      <p className="text-xs text-zinc-500 mt-0.5">{f.customerName}</p>
+                      <p className="text-xs text-zinc-500 mt-0.5 truncate">{f.customerName}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 flex-wrap justify-end">
                     {f.type && (
                       <span className={cn("inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full", typeBadgeColors[f.type ?? "call"])}>
                         {typeIcons[f.type ?? "call"]}
-                        {typeLabels[f.type]}
+                        <span className="hidden sm:inline">{typeLabels[f.type]}</span>
                       </span>
                     )}
                     {f.priority && (
