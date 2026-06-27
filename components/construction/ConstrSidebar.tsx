@@ -39,7 +39,7 @@ export default function ConstrSidebar() {
     <>
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-3 left-3 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 text-white shadow-lg md:hidden"
+        className="fixed top-3 left-3 z-50 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white shadow-lg md:hidden"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -53,23 +53,23 @@ export default function ConstrSidebar() {
 
       <aside
         className={cn(
-          "fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-zinc-700 bg-zinc-900 text-white transition-transform duration-200",
+          "fixed left-0 top-0 z-40 flex h-screen w-64 flex-col border-r border-zinc-200 bg-white text-zinc-900 transition-transform duration-200",
           "md:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
-        <div className="flex h-14 items-center justify-between border-b border-zinc-700 px-4">
+        <div className="flex h-14 items-center justify-between border-b border-zinc-200 px-4">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500 text-zinc-900">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
               <HardHat className="h-4 w-4" />
             </div>
-            <span className="text-base font-bold text-white whitespace-nowrap">
-              Constru<span className="text-amber-400">Panel</span>
+            <span className="text-base font-bold text-zinc-900 whitespace-nowrap">
+              Constru<span className="text-blue-600">Panel</span>
             </span>
           </div>
           <button
             onClick={() => setMobileOpen(false)}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-white md:hidden"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 md:hidden"
           >
             <X className="h-4 w-4" />
           </button>
@@ -87,11 +87,11 @@ export default function ConstrSidebar() {
                   className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-amber-500/20 text-amber-300"
-                      : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                      ? "bg-blue-50 text-blue-700"
+                      : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                   )}
                 >
-                  <item.icon className={cn("h-5 w-5 shrink-0", isActive ? "text-amber-400" : "text-zinc-500")} />
+                  <item.icon className={cn("h-5 w-5 shrink-0", isActive ? "text-blue-600" : "text-zinc-400")} />
                   {item.label}
                 </Link>
               );
@@ -99,22 +99,22 @@ export default function ConstrSidebar() {
           </nav>
         </div>
 
-        <div className="border-t border-zinc-700 p-3">
+        <div className="border-t border-zinc-200 p-3">
           <Link
             href="/"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-zinc-100"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
           >
-            <ArrowLeft className="h-5 w-5 shrink-0 text-zinc-500" />
+            <ArrowLeft className="h-5 w-5 shrink-0 text-zinc-400" />
             Back to RMC CRM
           </Link>
         </div>
 
-        <div className="border-t border-zinc-700 p-3">
+        <div className="border-t border-zinc-200 p-3">
           <div className="flex items-center gap-3">
             <UserButton />
             <div>
-              <p className="text-sm font-medium text-zinc-100 truncate">Profile</p>
+              <p className="text-sm font-medium text-zinc-900 truncate">Profile</p>
               <p className="text-xs text-zinc-500">Construction Panel</p>
             </div>
           </div>
