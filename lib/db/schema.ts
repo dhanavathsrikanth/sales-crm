@@ -471,6 +471,11 @@ export const usersRelations = relations(users, ({ many }) => ({
   referrals: many(referrals),
   callLog: many(callLog),
   odometerLogs: many(odometerLogs),
+  constrCustomers: many(constrCustomers),
+  constrLeads: many(constrLeads),
+  constrOrders: many(constrOrders),
+  constrFollowups: many(constrFollowups),
+  constrVisits: many(constrVisits),
 }));
 
 export const odometerLogsRelations = relations(odometerLogs, ({ one }) => ({
@@ -656,5 +661,266 @@ export const callLogRelations = relations(callLog, ({ one }) => ({
   lead: one(leads, {
     fields: [callLog.leadId],
     references: [leads.id],
+  }),
+}));
+
+export const constrProductCategoryEnum = pgEnum("constr_product_category", [
+  "aac_block",
+  "red_brick",
+]);
+
+export const constrOrderStatusEnum = pgEnum("constr_order_status", [
+  "pending",
+  "confirmed",
+  "dispatched",
+  "delivered",
+  "cancelled",
+]);
+
+export const constrLeadStageEnum = pgEnum("constr_lead_stage", [
+  "new",
+  "contacted",
+  "site_visited",
+  "requirement_received",
+  "quoted",
+  "negotiation",
+  "won",
+  "lost",
+]);
+
+export const constrCustomerTypeEnum = pgEnum("constr_customer_type", [
+  "individual",
+  "contractor",
+  "builder",
+  "dealer",
+]);
+
+export const constrFollowupTypeEnum = pgEnum("constr_followup_type", [
+  "call",
+  "whatsapp",
+  "meeting",
+  "site_visit",
+  "email",
+]);
+
+export const constrFollowupPriorityEnum = pgEnum("constr_followup_priority", [
+  "high",
+  "medium",
+  "low",
+]);
+
+export const constrFollowupStatusEnum = pgEnum("constr_followup_status", [
+  "pending",
+  "completed",
+  "missed",
+]);
+
+export const constrProducts = pgTable("constr_products", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  slug: text("slug").unique().notNull(),
+  category: constrProductCategoryEnum("category").notNull(),
+  sizeLabel: text("size_label"),
+  dimensions: text("dimensions"),
+  weightPerUnit: text("weight_per_unit"),
+  density: text("density"),
+  strength: text("strength"),
+  applications: text("applications").array(),
+  keyFeatures: text("key_features").array(),
+  description: text("description"),
+  specs: jsonb("specs"),
+  pricePerPiece: numeric("price_per_piece"),
+  pricePerM3: numeric("price_per_m3"),
+  pricePerTruck: numeric("price_per_truck"),
+  unitOfMeasure: text("unit_of_measure").default("piece"),
+  manufacturerName: text("manufacturer_name"),
+  imageUrl: text("image_url"),
+  isActive: boolean("is_active").default(true),
+  isCustom: boolean("is_custom").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const constrCustomers = pgTable("constr_customers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  phone: text("phone"),
+  whatsapp: text("whatsapp"),
+  email: text("email"),
+  address: text("address"),
+  city: text("city"),
+  district: text("district"),
+  state: text("state"),
+  pincode: text("pincode"),
+  type: constrCustomerTypeEnum("type").default("individual"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const constrLeads = pgTable("constr_leads", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  customerId: uuid("customer_id").references(() => constrCustomers.id, { onDelete: "set null" }),
+  projectName: text("project_name"),
+  siteAddress: text("site_address"),
+  city: text("city"),
+  district: text("district"),
+  state: text("state"),
+  projectType: text("project_type"),
+  estimatedValue: numeric("estimated_value"),
+  productInterest: text("product_interest").array(),
+  estimatedQuantity: numeric("estimated_quantity"),
+  quantityUnit: text("quantity_unit"),
+  stage: constrLeadStageEnum("stage").default("new"),
+  leadScore: integer("lead_score").default(0),
+  existingVendor: text("existing_vendor"),
+  competitorNotes: text("competitor_notes"),
+  remarks: text("remarks"),
+  lostReason: text("lost_reason"),
+  siteLat: numeric("site_lat"),
+  siteLng: numeric("site_lng"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const constrOrders = pgTable("constr_orders", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  customerId: uuid("customer_id").references(() => constrCustomers.id, { onDelete: "set null" }),
+  leadId: uuid("lead_id").references(() => constrLeads.id, { onDelete: "set null" }),
+  orderNumber: text("order_number").unique(),
+  orderDate: date("order_date").defaultNow(),
+  status: constrOrderStatusEnum("status").default("pending"),
+  totalAmount: numeric("total_amount").default("0"),
+  discountAmount: numeric("discount_amount").default("0"),
+  finalAmount: numeric("final_amount").default("0"),
+  deliveryAddress: text("delivery_address"),
+  deliveryDate: date("delivery_date"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const constrOrderItems = pgTable("constr_order_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id")
+    .notNull()
+    .references(() => constrOrders.id, { onDelete: "cascade" }),
+  productId: uuid("product_id").references(() => constrProducts.id, { onDelete: "set null" }),
+  customSizeLabel: text("custom_size_label"),
+  customDimensions: text("custom_dimensions"),
+  quantity: numeric("quantity").notNull(),
+  unitPrice: numeric("unit_price").notNull(),
+  totalPrice: numeric("total_price").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const constrFollowups = pgTable("constr_followups", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  leadId: uuid("lead_id")
+    .notNull()
+    .references(() => constrLeads.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  followupDate: date("followup_date").notNull(),
+  followupTime: time("followup_time"),
+  type: constrFollowupTypeEnum("type"),
+  priority: constrFollowupPriorityEnum("priority").default("medium"),
+  status: constrFollowupStatusEnum("status").default("pending"),
+  notes: text("notes"),
+  completedAt: timestamp("completed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const constrVisits = pgTable("constr_visits", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  leadId: uuid("lead_id")
+    .notNull()
+    .references(() => constrLeads.id, { onDelete: "cascade" }),
+  userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+  checkInTime: timestamp("check_in_time"),
+  checkOutTime: timestamp("check_out_time"),
+  checkInLat: numeric("check_in_lat"),
+  checkInLng: numeric("check_in_lng"),
+  checkInAddress: text("check_in_address"),
+  durationMinutes: integer("duration_minutes"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const constrProductsRelations = relations(constrProducts, ({ many }) => ({
+  orderItems: many(constrOrderItems),
+}));
+
+export const constrCustomersRelations = relations(constrCustomers, ({ one, many }) => ({
+  user: one(users, {
+    fields: [constrCustomers.userId],
+    references: [users.id],
+  }),
+  leads: many(constrLeads),
+  orders: many(constrOrders),
+}));
+
+export const constrLeadsRelations = relations(constrLeads, ({ one, many }) => ({
+  user: one(users, {
+    fields: [constrLeads.userId],
+    references: [users.id],
+  }),
+  customer: one(constrCustomers, {
+    fields: [constrLeads.customerId],
+    references: [constrCustomers.id],
+  }),
+  orders: many(constrOrders),
+  followups: many(constrFollowups),
+  visits: many(constrVisits),
+}));
+
+export const constrOrdersRelations = relations(constrOrders, ({ one, many }) => ({
+  user: one(users, {
+    fields: [constrOrders.userId],
+    references: [users.id],
+  }),
+  customer: one(constrCustomers, {
+    fields: [constrOrders.customerId],
+    references: [constrCustomers.id],
+  }),
+  lead: one(constrLeads, {
+    fields: [constrOrders.leadId],
+    references: [constrLeads.id],
+  }),
+  items: many(constrOrderItems),
+}));
+
+export const constrOrderItemsRelations = relations(constrOrderItems, ({ one }) => ({
+  order: one(constrOrders, {
+    fields: [constrOrderItems.orderId],
+    references: [constrOrders.id],
+  }),
+  product: one(constrProducts, {
+    fields: [constrOrderItems.productId],
+    references: [constrProducts.id],
+  }),
+}));
+
+export const constrFollowupsRelations = relations(constrFollowups, ({ one }) => ({
+  lead: one(constrLeads, {
+    fields: [constrFollowups.leadId],
+    references: [constrLeads.id],
+  }),
+  user: one(users, {
+    fields: [constrFollowups.userId],
+    references: [users.id],
+  }),
+}));
+
+export const constrVisitsRelations = relations(constrVisits, ({ one }) => ({
+  lead: one(constrLeads, {
+    fields: [constrVisits.leadId],
+    references: [constrLeads.id],
+  }),
+  user: one(users, {
+    fields: [constrVisits.userId],
+    references: [users.id],
   }),
 }));

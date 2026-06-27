@@ -17,3 +17,9 @@ export function formatCurrency(amount: number) {
     currency: "USD",
   }).format(amount)
 }
+
+export function generateOrderNumber(): string {
+  const year = new Date().getFullYear();
+  const random = Math.floor(Math.random() * 9999).toString().padStart(4, "0");
+  return `ORD-${year}-${random}`;
+}

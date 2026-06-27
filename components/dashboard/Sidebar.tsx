@@ -19,6 +19,7 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  HardHat,
 } from "lucide-react";
 
 const navItems = [
@@ -33,6 +34,7 @@ const navItems = [
   { href: "/notes", label: "Quick Notes", icon: StickyNote },
   { href: "/contacts", label: "Contacts", icon: ContactRound },
   { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/construction", label: "Construction", icon: HardHat },
 ];
 
 export default function Sidebar() {
