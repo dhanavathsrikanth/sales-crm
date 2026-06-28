@@ -3,11 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useLeads } from "@/hooks/construction/use-leads";
+import { deleteLead } from "@/lib/actions/construction/leads";
 import PageHeader from "@/components/construction-shared/PageHeader";
 import LoadingSpinner from "@/components/construction-shared/LoadingSpinner";
 import EmptyState from "@/components/construction-shared/EmptyState";
-import { Building2, MapPin, Plus } from "lucide-react";
+import { Building2, MapPin, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
@@ -46,7 +49,9 @@ const stageLabels: Record<string, string> = {
 
 export default function LeadsPage() {
   const [stage, setStage] = useState<string | undefined>();
-  const { data: leads, isLoading } = useLeads({ stage });
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const { data: leads, isLoading, refetch } = useLeads({ stage });
+  const queryClient = useQueryClient();
 
   const filters = [
     { label: "All", value: undefined },
@@ -148,7 +153,7 @@ export default function LeadsPage() {
               </div>
 
               {(lead.siteLat && lead.siteLng) || lead.customerWhatsapp || lead.customerPhone ? (
-                <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center gap-2">
+                <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center gap-2 flex-wrap">
                   {lead.siteLat && lead.siteLng && (
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&destination=${lead.siteLat},${lead.siteLng}`}
@@ -188,8 +193,55 @@ export default function LeadsPage() {
                       WhatsApp
                     </a>
                   )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      if (confirm("Delete this lead? This action cannot be undone.")) {
+                        setDeletingId(lead.id);
+                        deleteLead(lead.id)
+                          .then(() => {
+                            toast.success("Lead deleted");
+                            queryClient.invalidateQueries({ queryKey: ["constr-leads"] });
+                          })
+                          .catch(() => toast.error("Failed to delete lead"))
+                          .finally(() => setDeletingId(null));
+                      }
+                    }}
+                    disabled={deletingId === lead.id}
+                    className="ml-auto inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
+                    title="Delete lead"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </button>
                 </div>
-              ) : null}
+              ) : (
+                <div className="mt-3 pt-3 border-t border-zinc-100">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      if (confirm("Delete this lead? This action cannot be undone.")) {
+                        setDeletingId(lead.id);
+                        deleteLead(lead.id)
+                          .then(() => {
+                            toast.success("Lead deleted");
+                            queryClient.invalidateQueries({ queryKey: ["constr-leads"] });
+                          })
+                          .catch(() => toast.error("Failed to delete lead"))
+                          .finally(() => setDeletingId(null));
+                      }
+                    }}
+                    disabled={deletingId === lead.id}
+                    className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-100 transition-colors disabled:opacity-50"
+                    title="Delete lead"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Delete
+                  </button>
+                </div>
+              )}
             </Link>
           ))}
         </div>

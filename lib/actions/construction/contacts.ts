@@ -67,3 +67,12 @@ export async function createCustomer(data: {
 
   return customer;
 }
+
+export async function deleteCustomer(id: string) {
+  const { userId } = await auth();
+  const user = await getOrCreateUser(userId ?? undefined);
+  if (!user.data) throw new Error("Unauthorized");
+
+  await db.delete(constrCustomers).where(eq(constrCustomers.id, id));
+  return { success: true };
+}

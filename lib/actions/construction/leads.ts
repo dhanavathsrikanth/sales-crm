@@ -117,3 +117,12 @@ export async function getLeadStats() {
 
   return result[0];
 }
+
+export async function deleteLead(id: string) {
+  const { userId } = await auth();
+  const user = await getOrCreateUser(userId ?? undefined);
+  if (!user.data) throw new Error("Unauthorized");
+
+  await db.delete(constrLeads).where(eq(constrLeads.id, id));
+  return { success: true };
+}

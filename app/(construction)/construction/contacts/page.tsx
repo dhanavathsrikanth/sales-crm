@@ -3,13 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useCustomers } from "@/hooks/construction/use-contacts";
-import { createCustomer } from "@/lib/actions/construction/contacts";
+import { createCustomer, deleteCustomer } from "@/lib/actions/construction/contacts";
 import PageHeader from "@/components/construction-shared/PageHeader";
 import LoadingSpinner from "@/components/construction-shared/LoadingSpinner";
 import EmptyState from "@/components/construction-shared/EmptyState";
-import { ContactRound, Search, Plus, Phone, MessageCircle, Eye, X, Users } from "lucide-react";
+import { ContactRound, Search, Plus, Phone, MessageCircle, Eye, X, Users, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const typeColors: Record<string, string> = {
   individual: "bg-zinc-100 text-zinc-700",
@@ -53,7 +54,18 @@ export default function CustomersPage() {
       queryClient.invalidateQueries({ queryKey: ["constr-customers"] });
       setForm({ name: "", phone: "", whatsapp: "", email: "", city: "", type: "individual", notes: "" });
       setShowForm(false);
+      toast.success("Customer created successfully");
     },
+    onError: () => toast.error("Failed to create customer"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteCustomer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["constr-customers"] });
+      toast.success("Customer deleted successfully");
+    },
+    onError: () => toast.error("Failed to delete customer"),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -236,14 +248,14 @@ export default function CustomersPage() {
               {customer.city && (
                 <p className="text-xs text-zinc-400 mt-1">{customer.city}</p>
               )}
-              <div className="flex items-center gap-1 mt-3 pt-3 border-t border-zinc-100">
+              <div className="flex items-center gap-1 mt-3 pt-3 border-t border-zinc-100 flex-wrap">
                 {customer.phone && (
                   <a
                     href={`tel:${customer.phone}`}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                    className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                     title="Call"
                   >
-                    <Phone className="h-4 w-4" />
+                    <Phone className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </a>
                 )}
                 {customer.phone && (
@@ -251,19 +263,31 @@ export default function CustomersPage() {
                     href={`https://wa.me/${customer.phone.replace(/[^0-9]/g, "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                    className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                     title="WhatsApp"
                   >
-                    <MessageCircle className="h-4 w-4" />
+                    <MessageCircle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                   </a>
                 )}
                 <Link
                   href={`/construction/contacts/${customer.id}`}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                  className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
                   title="View details"
                 >
-                  <Eye className="h-4 w-4" />
+                  <Eye className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Link>
+                <button
+                  onClick={() => {
+                    if (confirm(`Delete ${customer.name}? This action cannot be undone.`)) {
+                      deleteMutation.mutate(customer.id);
+                    }
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
+                  title="Delete customer"
+                >
+                  <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </button>
               </div>
             </div>
           ))}

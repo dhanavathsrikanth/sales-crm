@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import { useLead } from "@/hooks/construction/use-leads";
 import PageHeader from "@/components/construction-shared/PageHeader";
 import LoadingSpinner from "@/components/construction-shared/LoadingSpinner";
-import { updateLeadStage } from "@/lib/actions/construction/leads";
+import { updateLeadStage, deleteLead } from "@/lib/actions/construction/leads";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 
 const stageColors: Record<string, string> = {
   new: "bg-zinc-100 text-zinc-700",
@@ -37,6 +39,7 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
   const router = useRouter();
   const { data: lead, isLoading, refetch } = useLead(id);
   const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   if (isLoading) return <LoadingSpinner />;
   if (!lead) return <div className="text-center py-12 text-zinc-500">Lead not found</div>;
@@ -46,6 +49,19 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
     await updateLeadStage(id, newStage);
     setUpdating(false);
     refetch();
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this lead? This action cannot be undone.")) return;
+    setDeleting(true);
+    try {
+      await deleteLead(id);
+      toast.success("Lead deleted successfully");
+      router.push("/construction/leads");
+    } catch (error) {
+      toast.error("Failed to delete lead");
+      setDeleting(false);
+    }
   };
 
   return (
@@ -164,6 +180,14 @@ export default function LeadDetailPage({ params }: { params: Promise<{ id: strin
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 text-left"
               >
                 View Follow-ups
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="w-full rounded-lg border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50 text-left flex items-center gap-2 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                {deleting ? "Deleting..." : "Delete Lead"}
               </button>
             </div>
           </div>
