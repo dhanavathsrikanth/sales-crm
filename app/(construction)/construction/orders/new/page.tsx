@@ -7,7 +7,7 @@ import { useCustomers } from "@/hooks/construction/use-contacts";
 import { createOrder } from "@/lib/actions/construction/orders";
 import { createCustomer } from "@/lib/actions/construction/contacts";
 import PageHeader from "@/components/construction-shared/PageHeader";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 
 interface OrderItem {
   productId?: string;
@@ -29,6 +29,8 @@ export default function NewOrderPage() {
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<OrderItem[]>([{ productId: "", customSizeLabel: "", customDimensions: "", quantity: 1, unitPrice: 0 }]);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const addItem = () => {
     setItems([...items, { productId: "", customSizeLabel: "", customDimensions: "", quantity: 1, unitPrice: 0 }]);
@@ -58,27 +60,50 @@ export default function NewOrderPage() {
 
   const handleCreateCustomer = async () => {
     if (!newCustomer.name) return;
-    const customer = await createCustomer({
-      name: newCustomer.name,
-      phone: newCustomer.phone,
-      city: newCustomer.city,
-    });
-    setCustomerId(customer.id);
-    setShowNewCustomer(false);
-    setNewCustomer({ name: "", phone: "", city: "" });
-    refetchCustomers();
+    setError(null);
+    try {
+      const customer = await createCustomer({
+        name: newCustomer.name,
+        phone: newCustomer.phone || undefined,
+        city: newCustomer.city || undefined,
+      });
+      setCustomerId(customer.id);
+      setShowNewCustomer(false);
+      setNewCustomer({ name: "", phone: "", city: "" });
+      await refetchCustomers();
+      setSuccess("Customer created successfully");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err: any) {
+      console.error("Failed to create customer:", err);
+      setError(err?.message || "Failed to create customer. Please try again.");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerId) return;
+    if (!customerId) {
+      setError("Please select a customer first.");
+      return;
+    }
+    if (items.length === 0) {
+      setError("Please add at least one order item.");
+      return;
+    }
+
+    const hasEmptyProduct = items.some(item => !item.productId && item.productId !== "__custom__");
+    if (hasEmptyProduct) {
+      setError("Please select a product for each order item.");
+      return;
+    }
+
     setSaving(true);
+    setError(null);
 
     try {
       await createOrder({
         customerId,
         items: items.map(item => ({
-          productId: item.productId || undefined,
+          productId: item.productId === "__custom__" ? undefined : item.productId || undefined,
           customSizeLabel: item.customSizeLabel || undefined,
           customDimensions: item.customDimensions || undefined,
           quantity: item.quantity,
@@ -89,10 +114,9 @@ export default function NewOrderPage() {
       });
 
       router.push("/construction/orders");
-      router.refresh();
-    } catch (error) {
-      console.error(error);
-    } finally {
+    } catch (err: any) {
+      console.error("Failed to create order:", err);
+      setError(err?.message || "Failed to create order. Please try again.");
       setSaving(false);
     }
   };
@@ -100,6 +124,21 @@ export default function NewOrderPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <PageHeader title="New Order" subtitle="Create a new sales order" />
+
+      {error && (
+        <div className="mb-4 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="ml-auto text-red-500 hover:text-red-700">&times;</button>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+          <CheckCircle className="h-4 w-4 shrink-0" />
+          <span>{success}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="rounded-xl border border-zinc-200 bg-white p-5">
@@ -109,7 +148,7 @@ export default function NewOrderPage() {
             <div className="flex gap-2">
               <select
                 value={customerId}
-                onChange={(e) => setCustomerId(e.target.value)}
+                onChange={(e) => { setCustomerId(e.target.value); setError(null); }}
                 required
                 className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
               >
@@ -152,13 +191,14 @@ export default function NewOrderPage() {
                 <button
                   type="button"
                   onClick={handleCreateCustomer}
-                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700"
+                  disabled={!newCustomer.name}
+                  className="rounded-lg bg-emerald-600 px-3 py-2 text-sm text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
                   Add
                 </button>
                 <button
                   type="button"
-                  onClick={() => setShowNewCustomer(false)}
+                  onClick={() => { setShowNewCustomer(false); setError(null); }}
                   className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50"
                 >
                   Cancel
@@ -296,7 +336,7 @@ export default function NewOrderPage() {
           <button
             type="submit"
             disabled={saving || !customerId || items.length === 0}
-            className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+            className="rounded-lg bg-emerald-600 px-6 py-2 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving ? "Creating Order..." : "Create Order"}
           </button>
