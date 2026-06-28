@@ -3,14 +3,19 @@ import ConstructionMobileNav from "@/components/construction/ConstructionMobileN
 
 export default function ConstructionRootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-zinc-50">
+    <>
+      <style>{`
+        @media (min-width: 1024px) {
+          .constr-content { margin-left: 16rem; }
+        }
+      `}</style>
       <ConstrSidebar />
-      <div className="flex flex-1 flex-col w-full max-w-full lg:ml-64 transition-all duration-300">
-        <main className="flex-1 px-3 sm:px-4 lg:px-8 py-3 sm:py-4 lg:py-6 pb-20 lg:pb-6 overflow-x-hidden">
+      <div className="constr-content min-h-screen bg-zinc-50">
+        <main className="px-3 sm:px-4 lg:px-8 py-3 sm:py-4 lg:py-6 pb-20 lg:pb-6 overflow-x-hidden">
           {children}
         </main>
       </div>
       <ConstructionMobileNav />
-    </div>
+    </>
   );
 }
