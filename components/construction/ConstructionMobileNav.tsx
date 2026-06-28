@@ -12,6 +12,7 @@ import {
   CalendarCheck,
   MapPin,
   BarChart3,
+  Gauge,
 } from "lucide-react";
 
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
 const morePages = [
   { href: "/construction/contacts", label: "Customers", icon: Users },
   { href: "/construction/visits", label: "Visits", icon: MapPin },
+  { href: "/construction/mileage", label: "Mileage", icon: Gauge },
   { href: "/construction/reports", label: "Reports", icon: BarChart3 },
 ];
 

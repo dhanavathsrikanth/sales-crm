@@ -476,6 +476,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   constrOrders: many(constrOrders),
   constrFollowups: many(constrFollowups),
   constrVisits: many(constrVisits),
+  constrOdometerLogs: many(constrOdometerLogs),
 }));
 
 export const odometerLogsRelations = relations(odometerLogs, ({ one }) => ({
@@ -921,6 +922,33 @@ export const constrVisitsRelations = relations(constrVisits, ({ one }) => ({
   }),
   user: one(users, {
     fields: [constrVisits.userId],
+    references: [users.id],
+  }),
+}));
+
+export const constrOdometerLogs = pgTable("constr_odometer_logs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  logDate: date("log_date").notNull(),
+  startReading: numeric("start_reading").notNull(),
+  endReading: numeric("end_reading"),
+  distanceKm: numeric("distance_km"),
+  vehicleType: vehicleTypeEnum("vehicle_type").default("motorbike"),
+  vehicleNumber: text("vehicle_number"),
+  fuelFilled: numeric("fuel_filled"),
+  fuelCost: numeric("fuel_cost"),
+  taRatePerKm: numeric("ta_rate_per_km").default("4"),
+  taAmount: numeric("ta_amount"),
+  purpose: text("purpose"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const constrOdometerLogsRelations = relations(constrOdometerLogs, ({ one }) => ({
+  user: one(users, {
+    fields: [constrOdometerLogs.userId],
     references: [users.id],
   }),
 }));

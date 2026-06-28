@@ -5,6 +5,7 @@ import { useLeadStats, useLeads } from "@/hooks/construction/use-leads";
 import { useProducts } from "@/hooks/construction/use-products";
 import { useFollowups } from "@/hooks/construction/use-followups";
 import { useVisits } from "@/hooks/construction/use-visits";
+import { useConstrTodayOdometerLog } from "@/hooks/construction/use-mileage";
 import StatCard from "@/components/construction-shared/StatCard";
 import LoadingSpinner from "@/components/construction-shared/LoadingSpinner";
 import {
@@ -23,6 +24,8 @@ import {
   Mail,
   CheckCircle,
   AlertCircle,
+  Gauge,
+  Loader2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import Link from "next/link";
@@ -66,6 +69,7 @@ export default function DashboardPage() {
   const { data: products } = useProducts();
   const { data: pendingFollowups } = useFollowups({ status: "pending" });
   const { data: recentVisits } = useVisits();
+  const { data: todayOdometer } = useConstrTodayOdometerLog();
 
   if (loadingStats || loadingOrders || loadingLeads) return <LoadingSpinner />;
 
@@ -319,6 +323,71 @@ export default function DashboardPage() {
               </div>
             </div>
           )}
+
+          <div className="rounded-xl border border-zinc-200 bg-white">
+            <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-zinc-100">
+              <h2 className="font-semibold text-zinc-900 text-sm sm:text-base flex items-center gap-2">
+                <Gauge className="h-4 w-4 text-blue-600" />
+                Today's Mileage
+              </h2>
+              <Link href="/construction/mileage" className="text-xs sm:text-sm text-emerald-600 hover:underline flex items-center gap-1">
+                Details <ArrowRight className="h-3 w-3" />
+              </Link>
+            </div>
+            <div className="p-4 sm:p-5">
+              {todayOdometer ? (
+                <div className="space-y-3">
+                  {todayOdometer.endReading ? (
+                    <>
+                      <div className="flex items-center gap-2 text-emerald-600">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="text-sm font-medium">Day Complete</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-[10px] text-zinc-500 uppercase">Distance</p>
+                          <p className="text-lg font-bold text-zinc-900">
+                            {Number(todayOdometer.distanceKm || 0).toLocaleString("en-IN")} km
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-zinc-500 uppercase">TA Earned</p>
+                          <p className="text-lg font-bold text-emerald-600">
+                            ₹{Number(todayOdometer.taAmount || 0).toLocaleString("en-IN")}
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 text-amber-600">
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm font-medium">Started: {Number(todayOdometer.startReading).toLocaleString("en-IN")} km</span>
+                      </div>
+                      <Link
+                        href="/construction/mileage"
+                        className="block w-full rounded-lg bg-blue-600 px-4 py-2 text-center text-sm font-medium text-white hover:bg-blue-700"
+                      >
+                        Close Day
+                      </Link>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center">
+                  <Gauge className="h-8 w-8 text-zinc-300 mx-auto mb-2" />
+                  <p className="text-sm text-zinc-500 mb-3">No reading logged today</p>
+                  <Link
+                    href="/construction/mileage"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Log Reading
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
