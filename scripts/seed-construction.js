@@ -1,7 +1,6 @@
 const { neon } = require("@neondatabase/serverless");
 
-const DB_URL =
-  "process.env.DATABASE_URL";
+const DB_URL = process.env.DATABASE_URL;
 
 const sql = neon(DB_URL);
 
