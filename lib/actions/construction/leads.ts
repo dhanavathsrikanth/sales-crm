@@ -24,8 +24,11 @@ export async function getLeads(filters?: { stage?: string; search?: string }) {
       estimatedValue: constrLeads.estimatedValue,
       productInterest: constrLeads.productInterest,
       createdAt: constrLeads.createdAt,
+      siteLat: constrLeads.siteLat,
+      siteLng: constrLeads.siteLng,
       customerName: constrCustomers.name,
       customerPhone: constrCustomers.phone,
+      customerWhatsapp: constrCustomers.whatsapp,
       customerId: constrCustomers.id,
     })
     .from(constrLeads)

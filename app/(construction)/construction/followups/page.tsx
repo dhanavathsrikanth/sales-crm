@@ -18,6 +18,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
 import { TimePicker } from "@/components/ui/time-picker";
 
@@ -102,11 +103,13 @@ export default function FollowupsPage() {
         priority: form.priority,
         notes: form.notes || undefined,
       });
+      toast.success("Follow-up scheduled successfully!");
       setForm({ leadId: "", followupDate: "", followupTime: "", type: "call", priority: "medium", notes: "" });
       setShowForm(false);
       refetch();
     } catch (error) {
       console.error(error);
+      toast.error("Failed to schedule follow-up.");
     } finally {
       setSaving(false);
     }
@@ -116,9 +119,11 @@ export default function FollowupsPage() {
     setCompletingId(id);
     try {
       await completeFollowup(id);
+      toast.success("Follow-up completed!");
       refetch();
     } catch (error) {
       console.error(error);
+      toast.error("Failed to complete follow-up.");
     } finally {
       setCompletingId(null);
     }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useLeads } from "@/hooks/construction/use-leads";
 import { checkIn } from "@/lib/actions/construction/visits";
 import PageHeader from "@/components/construction-shared/PageHeader";
+import { toast } from "sonner";
 
 function NewVisitForm() {
   const router = useRouter();
@@ -36,6 +37,7 @@ function NewVisitForm() {
         notes || undefined
       );
 
+      toast.success("Visit checked in successfully!");
       router.push("/construction/visits");
       router.refresh();
     } catch (error) {
