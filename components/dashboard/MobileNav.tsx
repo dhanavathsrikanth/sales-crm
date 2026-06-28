@@ -20,6 +20,7 @@ const mainNavItems = [
 
 const secondaryPages = [
   { href: "/contacts", label: "Contacts", icon: ContactRound },
+  { href: "/calls", label: "Call Log", icon: Phone },
   { href: "/visits", label: "Visits", icon: MapPin },
   { href: "/goals", label: "Goals", icon: Goal },
   { href: "/reports", label: "Reports", icon: BarChart3 },
@@ -54,6 +55,7 @@ export default function MobileNav() {
 
   const isMoreActive =
     pathname.startsWith("/contacts") ||
+    pathname.startsWith("/calls") ||
     pathname.startsWith("/visits") ||
     pathname.startsWith("/goals") ||
     pathname.startsWith("/reports") ||
