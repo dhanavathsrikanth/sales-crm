@@ -46,8 +46,13 @@ export async function createFollowup(data: {
   priority?: string;
   notes?: string;
 }) {
+  const { userId } = await auth();
+  const user = await getOrCreateUser(userId ?? undefined);
+  if (!user.data) throw new Error("Unauthorized");
+
   const [followup] = await db.insert(constrFollowups).values({
     leadId: data.leadId as any,
+    userId: user.data.id,
     followupDate: data.followupDate,
     followupTime: data.followupTime,
     type: data.type as any,

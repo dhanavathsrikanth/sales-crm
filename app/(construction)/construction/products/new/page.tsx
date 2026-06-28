@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createProduct } from "@/lib/actions/construction/products";
 import PageHeader from "@/components/construction-shared/PageHeader";
+import { Upload, ImageIcon } from "lucide-react";
 
 export default function NewProductPage() {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [createdProductId, setCreatedProductId] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     sizeLabel: "",
@@ -26,7 +31,7 @@ export default function NewProductPage() {
     setSaving(true);
     try {
       const slug = form.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
-      await createProduct({
+      const product = await createProduct({
         name: form.name,
         slug,
         category: "aac_block",
@@ -42,12 +47,43 @@ export default function NewProductPage() {
         isCustom: true,
         manufacturerName: "ULTRA AAC BLOCKS / ARUGONDA INFRATECH",
       });
-      router.push("/construction/products");
+      setCreatedProductId(product.id);
+      router.push(`/construction/products/${product.id}`);
       router.refresh();
     } catch (error) {
       console.error(error);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !createdProductId) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("productId", createdProductId);
+
+      const res = await fetch("/api/construction/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Upload failed");
+      }
+
+      const { url } = await res.json();
+      setPreviewUrl(url);
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -162,6 +198,43 @@ export default function NewProductPage() {
             </div>
           </div>
         </div>
+
+        {createdProductId && (
+          <div className="border-t border-zinc-100 pt-4">
+            <h4 className="text-sm font-semibold text-zinc-900 mb-3">Product Image</h4>
+            <div className="flex items-start gap-4">
+              <div className="relative group">
+                {previewUrl ? (
+                  <img src={previewUrl} alt="Preview" className="h-24 w-24 rounded-lg object-cover border border-zinc-200" />
+                ) : (
+                  <div className="h-24 w-24 rounded-lg border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center text-zinc-400">
+                    <ImageIcon className="h-6 w-6 mb-1" />
+                    <span className="text-xs">No image</span>
+                  </div>
+                )}
+              </div>
+              <div className="text-sm text-zinc-500">
+                <p>Upload after creating the product.</p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50 disabled:opacity-50"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  {uploading ? "Uploading..." : "Upload Image"}
+                </button>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+            </div>
+          </div>
+        )}
 
         <div className="flex gap-3 pt-2">
           <button

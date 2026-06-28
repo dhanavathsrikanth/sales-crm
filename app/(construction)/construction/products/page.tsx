@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import PageHeader from "@/components/construction-shared/PageHeader";
 import LoadingSpinner from "@/components/construction-shared/LoadingSpinner";
 import EmptyState from "@/components/construction-shared/EmptyState";
-import { Package, Plus, Search } from "lucide-react";
+import { Package, Plus, Search, ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function ProductsPage() {
@@ -95,9 +95,17 @@ export default function ProductsPage() {
               className="rounded-xl border border-zinc-200 bg-white p-5 hover:border-emerald-300 hover:shadow-sm transition-all group"
             >
               <div className="flex items-start justify-between mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition-colors">
-                  <Package className="h-5 w-5" />
-                </div>
+                {product.imageUrl ? (
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="h-10 w-10 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100 transition-colors">
+                    <Package className="h-5 w-5" />
+                  </div>
+                )}
                 <span className={cn(
                   "text-xs font-medium px-2 py-0.5 rounded-full",
                   product.category === "aac_block"

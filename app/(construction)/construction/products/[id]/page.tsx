@@ -1,21 +1,25 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useProduct } from "@/hooks/construction/use-products";
 import PageHeader from "@/components/construction-shared/PageHeader";
 import LoadingSpinner from "@/components/construction-shared/LoadingSpinner";
 import { updateProduct } from "@/lib/actions/construction/products";
+import { Upload, ImageIcon } from "lucide-react";
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
   const { data: product, isLoading, refetch } = useProduct(id);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [pricePiece, setPricePiece] = useState("");
   const [priceM3, setPriceM3] = useState("");
   const [priceTruck, setPriceTruck] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   if (isLoading) return <LoadingSpinner />;
   if (!product) return <div className="text-center py-12 text-zinc-500">Product not found</div>;
@@ -30,6 +34,40 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
     setSaving(false);
     refetch();
   };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("productId", id);
+
+      const res = await fetch("/api/construction/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Upload failed");
+      }
+
+      const { url } = await res.json();
+      setPreviewUrl(url);
+      await updateProduct(id, { imageUrl: url });
+      refetch();
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Failed to upload image. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const imageUrl = previewUrl || product.imageUrl;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -48,6 +86,51 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               Custom Size
             </span>
           )}
+        </div>
+
+        <div className="border-t border-zinc-100 pt-4">
+          <h4 className="text-sm font-semibold text-zinc-900 mb-3">Product Image</h4>
+          <div className="flex items-start gap-4">
+            <div className="relative group">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={product.name}
+                  className="h-32 w-32 rounded-lg object-cover border border-zinc-200"
+                />
+              ) : (
+                <div className="h-32 w-32 rounded-lg border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center text-zinc-400">
+                  <ImageIcon className="h-8 w-8 mb-1" />
+                  <span className="text-xs">No image</span>
+                </div>
+              )}
+              <div
+                className="absolute inset-0 rounded-lg bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            <div className="flex-1 text-sm text-zinc-500">
+              <p>Upload a product image (JPEG, PNG, WebP). Max 5MB.</p>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                {uploading ? "Uploading..." : "Change Image"}
+              </button>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">

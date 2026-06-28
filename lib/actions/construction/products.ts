@@ -40,6 +40,9 @@ export async function createProduct(data: {
   manufacturerName?: string;
   imageUrl?: string;
 }) {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) throw new Error("Unauthorized");
+
   const [product] = await db.insert(constrProducts).values({
     name: data.name,
     slug: data.slug,
@@ -68,6 +71,9 @@ export async function updateProduct(id: string, data: Partial<{
   imageUrl: string;
   isActive: boolean;
 }>) {
+  const { userId: clerkId } = await auth();
+  if (!clerkId) throw new Error("Unauthorized");
+
   const updates: any = {};
   if (data.name) updates.name = data.name;
   if (data.pricePerPiece !== undefined) updates.pricePerPiece = data.pricePerPiece.toString();
